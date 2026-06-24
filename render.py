@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 import sys
 import time
 import os
+import subprocess
 import urllib3
 import traceback
 
@@ -56,6 +57,36 @@ def fetch_data(url):
 
     return None
 
+def get_battery_percent():
+    battery_paths = [
+        "/sys/class/power_supply/max17042_battery/capacity",
+        "/sys/class/power_supply/battery/capacity",
+        "/sys/class/power_supply/BAT0/capacity",
+    ]
+
+    for path in battery_paths:
+        try:
+            with open(path, "r") as f:
+                value = f.read().strip()
+            if value.isdigit():
+                return f"{int(value)}%"
+        except Exception:
+            pass
+
+    try:
+        value = subprocess.check_output(
+            ["lipc-get-prop", "com.lab126.powerd", "battLevel"],
+            stderr=subprocess.DEVNULL,
+            timeout=3,
+            text=True,
+        ).strip()
+        if value.isdigit():
+            return f"{int(value)}%"
+    except Exception:
+        pass
+
+    return "--%"
+
 try:
     #print("DEBUG 2: 準備抓 weather API")
     c_res = fetch_data(curr_url)
@@ -94,11 +125,15 @@ try:
     draw.text((45, 120), time.strftime("%Y/%m/%d %a"), font=f_small, fill=20)
     
     time_str = time.strftime("%H:%M")
+    battery_str = f"電量 {get_battery_percent()}"
     try:
         t_w = f_mid.getlength(time_str)
         draw.text((W - t_w - 45, 50), time_str, font=f_mid, fill=20)
+        b_w = f_small.getlength(battery_str)
+        draw.text((W - b_w - 45, 120), battery_str, font=f_small, fill=20)
     except:
         draw.text((560, 50), time_str, font=f_mid, fill=20)
+        draw.text((560, 120), battery_str, font=f_small, fill=20)
 
     draw.text((65, 210), get_weather_icon(c_desc), font=f_big, fill=20)
     draw.text((270, 185), f"{c_temp}°C", font=f_v_big, fill=20)
