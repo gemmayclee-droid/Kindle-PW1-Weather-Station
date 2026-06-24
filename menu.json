@@ -1,0 +1,22 @@
+{
+  "items": [
+  {
+    "name": "Weather Clock",
+    "priority": 0,
+    "items": [
+    {
+      "name": "Start Weather Clock",
+      "action": "./start.sh",
+      "exitmenu": true,
+      "refresh": false
+    },
+    {
+      "name": "Environment Scan",
+      "action": "./scan.sh",
+      "exitmenu": false,
+      "refresh": false
+    }
+    ]
+  }
+  ]
+}

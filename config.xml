@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <information>
+        <name>Weather Clock</name>
+        <version>1.0</version>
+        <author>Custom</author>
+        <id>WeatherClock-Menu</id>
+    </information>
+
+    <settings>
+        <city>Shanghai</city>
+        <apikey>YOUR_API_KEY</apikey>
+        <unit>metric</unit>
+        <interval>1800</interval>
+    </settings>
+
+    <menus>
+        <menu type="json" dynamic="true">menu.json</menu>
+    </menus>
+</extension>
