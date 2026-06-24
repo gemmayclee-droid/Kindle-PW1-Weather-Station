@@ -4,7 +4,7 @@ A Kindle Paperwhite 1 weather-station extension that renders current weather and
 
 ## Features
 
-- Current weather, temperature, humidity, date, and time
+- Current weather, temperature, humidity, date, time, and battery percentage
 - Five-day forecast layout optimized for 758x1024 Kindle PW1 display
 - OpenWeatherMap API support
 - Wi-Fi on only during refresh, then off again to reduce power usage
@@ -13,7 +13,7 @@ A Kindle Paperwhite 1 weather-station extension that renders current weather and
 
 ## Files
 
-- `render.py` - Fetches weather data and renders `weather.png`
+- `render.py` - Fetches weather data, reads Kindle battery percentage, and renders `weather.png`
 - `worker.sh` - Main loop for Wi-Fi, rendering, display refresh, and sleep interval
 - `start.sh` - Starts the worker process
 - `scan.sh` - Writes Kindle environment diagnostics
@@ -54,3 +54,4 @@ A Kindle Paperwhite 1 weather-station extension that renders current weather and
 - Do not commit a real API key to the repository.
 - `log.txt` and runtime diagnostics should stay local.
 - The default refresh loop in `worker.sh` sleeps for 3 hours between updates.
+- Battery percentage is shown under the time. If the battery value cannot be read, it displays `電量 --%`.

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.0 - 2026-06-24
+
+- Added Kindle battery percentage display to the weather render.
+- Added fallback battery detection through common Linux power-supply paths and `lipc-get-prop`.
+- Documented the battery display behavior in the README.
+
 ## 1.0.0 - 2026-06-24
 
 - Added initial Kindle PW1 weather-station extension.
