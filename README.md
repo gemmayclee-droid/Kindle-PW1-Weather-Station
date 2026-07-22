@@ -6,15 +6,15 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
 
 - Nearby weather, temperature, humidity, date, time, and battery percentage
 - Next 8 hours with one row per hour, plus next 3 days, optimized for 758x1024 Kindle PW1 display
-- OpenWeatherMap API support
+- Open-Meteo hourly forecast support
 - Wi-Fi on only during refresh, then off again to reduce power usage
-- Single OpenWeatherMap One Call API request per refresh to reduce network time
+- Single Open-Meteo forecast request per refresh to reduce network time
 - Periodic E Ink refresh with less frequent full refresh to reduce ghosting and power use
 - KUAL menu entries for starting the weather clock and running an environment scan
 
 ## Files
 
-- `render.py` - Fetches One Call hourly/daily data, reads Kindle battery percentage, and renders `weather.png`
+- `render.py` - Fetches Open-Meteo hourly/daily data, reads Kindle battery percentage, and renders `weather.png`
 - `worker.sh` - Main loop for Wi-Fi, rendering, display refresh, and low-power sleep interval
 - `start.sh` - Starts the worker process
 - `scan.sh` - Writes Kindle environment diagnostics
@@ -31,14 +31,16 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
    /mnt/us/extensions/weatheriot
    ```
 
-2. Edit `config.xml` and set your city and OpenWeatherMap API key:
+2. Edit `config.xml` and set your city and coordinates:
 
    ```xml
    <city>Shanghai</city>
    <lat>31.2304</lat>
    <lon>121.4737</lon>
-   <apikey>YOUR_API_KEY</apikey>
+       <apikey>YOUR_API_KEY</apikey>
    ```
+
+   The `apikey` field is kept for compatibility with older versions, but the current renderer uses Open-Meteo and does not require an API key.
 
 3. From KUAL, open `Weather Clock` and choose `Start Weather Clock`.
 
@@ -50,7 +52,7 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
 - Python packages:
   - `requests`
   - `Pillow`
-- OpenWeatherMap API key
+- No weather API key is required for the current Open-Meteo renderer.
 
 ## Notes
 
@@ -58,4 +60,4 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
 - `log.txt` and runtime diagnostics should stay local.
 - The default refresh loop in `worker.sh` sleeps for 4 hours between updates.
 - Battery percentage is shown under the time. If the battery value cannot be read, it displays `電量 --%`.
-- The 8-hour view uses OpenWeatherMap One Call `hourly` data, so it shows one row per hour.
+- The 8-hour view uses Open-Meteo `hourly` data, so it shows one row per hour without requiring One Call API access.

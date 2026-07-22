@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0 - 2026-07-22
+
+- Switched hourly rendering from OpenWeatherMap One Call to Open-Meteo hourly forecast data.
+- Removed the runtime dependency on One Call API access for the 8-hour view.
+- Added clearer API failure logging for forecast fetch errors.
+
 ## 1.3.0 - 2026-07-22
 
 - Switched the 8-hour weather view to true hourly data using OpenWeatherMap One Call.
