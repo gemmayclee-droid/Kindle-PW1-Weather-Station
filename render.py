@@ -1,31 +1,25 @@
 #!/usr/bin/python3
 
-import requests
-#print("DEBUG 1: Python imports 完成")
-from PIL import Image, ImageDraw, ImageFont
-import sys
-import time
 import os
 import subprocess
-import urllib3
+import sys
+import time
 import traceback
+from collections import Counter, defaultdict
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import requests
+from PIL import Image, ImageDraw, ImageFont
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TARGET_DIR = "/mnt/us/extensions/weatheriot"
+
 city = sys.argv[1] if len(sys.argv) > 1 else "Shanghai"
 apikey = sys.argv[2] if len(sys.argv) > 2 else "YOUR_API_KEY"
 
-curr_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={apikey}&units=metric&lang=zh_tw"
-fore_url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={apikey}&units=metric&lang=zh_tw"
-
-def get_weather_icon(desc):
-    if "晴" in desc: return "☀"
-    if "雲" in desc or "陰" in desc: return "☁"
-    if "雨" in desc: return "☂"
-    if "雪" in desc: return "❄"
-    if "雷" in desc: return "⚡"
-    return "·"
+FORECAST_URL = (
+    "http://api.openweathermap.org/data/2.5/forecast"
+    f"?q={city}&appid={apikey}&units=metric&lang=zh_tw"
+)
 
 WEATHER_MAP = {
     "Clear": "晴天",
@@ -37,25 +31,35 @@ WEATHER_MAP = {
     "Mist": "霧",
     "Fog": "濃霧",
     "Haze": "霾",
-    "Smoke": "煙霧"
+    "Smoke": "煙霧",
 }
 
-def fetch_data(url):
-    for i in range(2):
-        try:
-            r = requests.get(
-                url,
-                timeout=12,
-                verify=False
-            )
 
+def get_weather_icon(desc):
+    if "晴" in desc:
+        return "☀"
+    if "雲" in desc or "陰" in desc:
+        return "☁"
+    if "雨" in desc:
+        return "☂"
+    if "雪" in desc:
+        return "❄"
+    if "雷" in desc:
+        return "⚡"
+    return "·"
+
+
+def fetch_forecast():
+    session = requests.Session()
+    for _ in range(2):
+        try:
+            r = session.get(FORECAST_URL, timeout=12)
             if r.status_code == 200:
                 return r.json()
-
         except Exception:
             time.sleep(2)
-
     return None
+
 
 def get_battery_percent():
     battery_paths = [
@@ -87,122 +91,149 @@ def get_battery_percent():
 
     return "--%"
 
+
+def map_desc(item):
+    raw_desc = item["weather"][0]["main"]
+    return WEATHER_MAP.get(raw_desc, raw_desc)
+
+
+def get_font(size):
+    path = os.path.join(BASE_DIR, "font.ttc")
+    if not os.path.exists(path):
+        path = "/usr/java/lib/fonts/CJK.ttf"
+    return ImageFont.truetype(path, size)
+
+
+def text_width(font, value):
+    try:
+        return font.getlength(value)
+    except Exception:
+        return font.getbbox(value)[2]
+
+
+def right_text(draw, x_right, y, text, font, fill):
+    draw.text((x_right - text_width(font, text), y), text, font=font, fill=fill)
+
+
+def build_day_summaries(items, limit=3):
+    today = time.strftime("%Y-%m-%d")
+    grouped = defaultdict(list)
+
+    for item in items:
+        day = item["dt_txt"][:10]
+        if day > today:
+            grouped[day].append(item)
+
+    summaries = []
+    for day in sorted(grouped.keys())[:limit]:
+        rows = grouped[day]
+        temps = [row["main"]["temp"] for row in rows]
+        descs = [map_desc(row) for row in rows]
+        desc = Counter(descs).most_common(1)[0][0]
+        summaries.append(
+            {
+                "date": day[5:].replace("-", "/"),
+                "desc": desc,
+                "min": round(min(temps)),
+                "max": round(max(temps)),
+            }
+        )
+
+    return summaries
+
+
+def save_optimized(img):
+    final_img = img.point(lambda x: 0 if x < 128 else 255, "L")
+    base_path = os.path.join(TARGET_DIR, "weather.png")
+    tmp_path = os.path.join(TARGET_DIR, "weather.tmp.png")
+
+    if not os.path.exists(TARGET_DIR):
+        os.makedirs(TARGET_DIR)
+
+    final_img.save(tmp_path, "PNG", optimize=False)
+    os.replace(tmp_path, base_path)
+
+
 try:
-    #print("DEBUG 2: 準備抓 weather API")
-    c_res = fetch_data(curr_url)
-    #print("DEBUG 3: weather API 完成")
-    #print("DEBUG 4: 準備抓 forecast API")
-    f_res = fetch_data(fore_url)
-    #print("DEBUG 5: forecast API 完成")
+    forecast = fetch_forecast()
+    if not forecast or "list" not in forecast or not forecast["list"]:
+        raise Exception("無法取得天氣預報 API 數據")
 
-    if not c_res: raise Exception("無法取得當前天氣 API 數據")
+    items = forecast["list"]
+    now_item = items[0]
+    now_desc = map_desc(now_item)
+    now_temp = round(now_item["main"]["temp"])
+    now_hum = now_item["main"].get("humidity", "--")
+    battery = get_battery_percent()
 
-    c_temp = round(c_res["main"]["temp"])
-    c_desc = c_res["weather"][0]["description"]
-    raw_desc = c_res["weather"][0]["main"]
-    c_desc = WEATHER_MAP.get(raw_desc, raw_desc)
-    c_hum  = c_res["main"]["humidity"]
-    status = "更新成功"
+    cutoff_ts = time.time() + 8 * 3600
+    hourly = [item for item in items if item.get("dt", 0) <= cutoff_ts][:3]
+    if len(hourly) < 3:
+        hourly = items[:3]
+    days = build_day_summaries(items, 3)
 
-    # 大畫布滿版排版 (758x1024)
     W, H = 758, 1024
-    #print("DEBUG 6: 開始產生圖片")
     img = Image.new("L", (W, H), 240)
     draw = ImageDraw.Draw(img)
 
-    def get_font(size):
-        p = os.path.join(BASE_DIR, "font.ttc")
-        if not os.path.exists(p): p = "/usr/java/lib/fonts/CJK.ttf"
-        return ImageFont.truetype(p, size)
+    f_huge = get_font(112)
+    f_big = get_font(78)
+    f_mid = get_font(48)
+    f_small = get_font(34)
+    f_tiny = get_font(28)
 
-    f_v_big = get_font(135)
-    f_big   = get_font(115)
-    f_mid   = get_font(54)
-    f_small = get_font(38)
+    # Header
+    draw.text((45, 40), city.upper(), font=f_mid, fill=20)
+    draw.text((45, 100), time.strftime("%Y/%m/%d %a"), font=f_tiny, fill=20)
+    right_text(draw, W - 45, 40, time.strftime("%H:%M"), f_mid, 20)
+    right_text(draw, W - 45, 100, f"電量 {battery}", f_tiny, 20)
 
-    # 恢復最原始、絕對安全的 time 呼叫
-    draw.text((45, 50), city.upper(), font=f_mid, fill=20)
-    draw.text((45, 120), time.strftime("%Y/%m/%d %a"), font=f_small, fill=20)
-    
-    time_str = time.strftime("%H:%M")
-    battery_str = f"電量 {get_battery_percent()}"
-    try:
-        t_w = f_mid.getlength(time_str)
-        draw.text((W - t_w - 45, 50), time_str, font=f_mid, fill=20)
-        b_w = f_small.getlength(battery_str)
-        draw.text((W - b_w - 45, 120), battery_str, font=f_small, fill=20)
-    except:
-        draw.text((560, 50), time_str, font=f_mid, fill=20)
-        draw.text((560, 120), battery_str, font=f_small, fill=20)
+    # Current / nearest forecast
+    draw.text((55, 175), get_weather_icon(now_desc), font=f_big, fill=20)
+    draw.text((205, 150), f"{now_temp}°C", font=f_huge, fill=20)
+    draw.text((215, 295), f"{now_desc} | 濕度 {now_hum}%", font=f_small, fill=20)
 
-    draw.text((65, 210), get_weather_icon(c_desc), font=f_big, fill=20)
-    draw.text((270, 185), f"{c_temp}°C", font=f_v_big, fill=20)
-    draw.text((275, 350), f"{c_desc} | 濕度 {c_hum}%", font=f_small, fill=20)
-    
-    draw.line((45, 440, 713, 440), fill=90, width=8)
-    draw.text((45, 465), "未來五日預報", font=f_small, fill=50)
+    draw.line((45, 375, 713, 375), fill=80, width=6)
 
-    if not f_res: raise Exception("無法取得未來天氣 API 數據")
-    if f_res and "list" in f_res:
-        y = 540
-        for item in f_res["list"][::8][:5]:
-            d_time = item["dt_txt"][5:10].replace("-", "/")
-            d_temp = f"{round(item['main']['temp'])}°C"
-            raw_desc = item["weather"][0]["main"]
-            d_desc = WEATHER_MAP.get(raw_desc, raw_desc)
-            
-            draw.text((60, y), d_time, font=f_small, fill=50)
-            draw.text((210, y), get_weather_icon(d_desc), font=f_small, fill=50)
-            draw.text((330, y), d_desc, font=f_small, fill=50)
-            try:
-                tmp_w = f_small.getlength(d_temp)
-                draw.text((W - tmp_w - 60, y), d_temp, font=f_small, fill=50)
-            except:
-                draw.text((620, y), d_temp, font=f_small, fill=50)
-            y += 85
+    # Next 8 hours. OpenWeather 3-hour forecast gives the closest three slots.
+    draw.text((45, 400), "未來八小時", font=f_small, fill=50)
+    y = 455
+    for item in hourly:
+        hour = item["dt_txt"][11:16]
+        desc = map_desc(item)
+        temp = f"{round(item['main']['temp'])}°C"
+        hum = f"{item['main'].get('humidity', '--')}%"
+        draw.text((60, y), hour, font=f_small, fill=20)
+        draw.text((190, y), get_weather_icon(desc), font=f_small, fill=20)
+        draw.text((280, y), desc, font=f_small, fill=20)
+        right_text(draw, 610, y, temp, f_small, 20)
+        right_text(draw, 705, y + 4, hum, f_tiny, 50)
+        y += 74
 
+    draw.line((45, 690, 713, 690), fill=80, width=6)
 
-    draw.text((45, 960), f"上海站 {status}：{time.strftime('%H:%M')}", font=f_small, fill=20)
+    # Next 3 days
+    draw.text((45, 715), "未來三天", font=f_small, fill=50)
+    y = 770
+    for day in days:
+        temp_range = f"{day['min']}~{day['max']}°C"
+        draw.text((60, y), day["date"], font=f_small, fill=20)
+        draw.text((190, y), get_weather_icon(day["desc"]), font=f_small, fill=20)
+        draw.text((280, y), day["desc"], font=f_small, fill=20)
+        right_text(draw, 705, y, temp_range, f_small, 20)
+        y += 68
 
-    # ==================================================
-    # PW1 最佳化輸出
-    # ==================================================
-
-    # 8-bit grayscale
-    final_img = img.point(lambda x: 0 if x < 128 else 255, 'L')
-
-    target_dir = "/mnt/us/extensions/weatheriot"
-    base_path = os.path.join(target_dir, "weather.png")
-
-    # 刪除舊圖
-    if os.path.exists(base_path):
-        os.remove(base_path)
-
-    # 最佳化 PNG
-    #print("DEBUG 7: 開始儲存 PNG")
-    final_img.save(
-        base_path,
-        "PNG",
-        optimize=True
+    draw.text(
+        (45, 960),
+        f"更新成功：{time.strftime('%H:%M')} | 單次預報 API",
+        font=f_tiny,
+        fill=20,
     )
 
-    # 強制寫入磁碟
-    if hasattr(os, 'sync'):
-        os.sync()
-
-    # 強制回收
-    import gc
-    gc.collect()
-
-    #print("DEBUG 8: render.py 完成")
-    # 強制退出
-    import sys
+    save_optimized(img)
     sys.exit(0)
 
 except Exception:
-
     print("FATAL ERROR 發生：")
-
     traceback.print_exc()
-
     os._exit(1)

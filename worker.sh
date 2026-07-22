@@ -33,6 +33,7 @@ lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
 
 REFRESH_COUNT=0
+INTERVAL_SECONDS=14400
 
 while true; do
 
@@ -81,14 +82,16 @@ while true; do
 
     echo "render.py 開始時間: $(date)" >> "$LOG"
     START_TS=$(date +%s)
-    timeout -t 120 /usr/bin/python3 render.py "$CITY" "$APIKEY" >> "$LOG" 2>&1
+    timeout -t 90 /usr/bin/python3 render.py "$CITY" "$APIKEY" >> "$LOG" 2>&1
     RET=$?
     END_TS=$(date +%s)
     echo "render.py 結束時間: $(date)" >> "$LOG"
     echo "render.py 執行秒數: $((END_TS - START_TS)) 秒" >> "$LOG"
     echo "render.py return code: $RET" >> "$LOG"
 
-    killall python3 >> "$LOG" 2>&1
+    if [ $RET -eq 124 ]; then
+        killall python3 >> "$LOG" 2>&1
+    fi
 
     # ==================================================
     # 關 WiFi（超重要）
@@ -108,9 +111,9 @@ while true; do
 
         echo "更新 EINK..." >> "$LOG"
         # 不每次 full refresh，避免耗電與閃爍
-        # 每 3 次做一次 full refresh
+        # 每 6 次做一次 full refresh
         REFRESH_COUNT=$((REFRESH_COUNT + 1))
-        if [ $REFRESH_COUNT -ge 3 ]; then
+        if [ $REFRESH_COUNT -ge 6 ]; then
             echo "執行 full refresh 清除殘影..." >> "$LOG"
             /usr/sbin/eips -c >> "$LOG" 2>&1
             sleep 1
@@ -140,16 +143,20 @@ while true; do
         renice 19 $PILLOW_PID >> "$LOG" 2>&1
     fi
 
-    # 關閉沒用 renderer
-    killall webreader >> "$LOG" 2>&1
-    killall mesquite >> "$LOG" 2>&1
+    # 關閉沒用 renderer，只在存在時處理，減少無效 wakeup/log
+    if pidof webreader >/dev/null 2>&1; then
+        killall webreader >> "$LOG" 2>&1
+    fi
+    if pidof mesquite >/dev/null 2>&1; then
+        killall mesquite >> "$LOG" 2>&1
+    fi
 
-    echo "保持 weather.png 3小時後更新..." >> "$LOG"
+    echo "保持 weather.png 4小時後更新..." >> "$LOG"
 
     # ==================================================
     # 等待下一次更新
     # ==================================================
 
-    sleep 10800
+    sleep "$INTERVAL_SECONDS"
 
 done

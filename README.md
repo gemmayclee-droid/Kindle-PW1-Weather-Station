@@ -1,20 +1,21 @@
 # Kindle PW1 Weather Station
 
-A Kindle Paperwhite 1 weather-station extension that renders current weather and a five-day forecast to a grayscale `weather.png`, then displays it on the Kindle E Ink screen.
+A Kindle Paperwhite 1 weather-station extension that renders nearby weather, the next 8 hours, and the next 3 days to a grayscale `weather.png`, then displays it on the Kindle E Ink screen.
 
 ## Features
 
-- Current weather, temperature, humidity, date, time, and battery percentage
-- Five-day forecast layout optimized for 758x1024 Kindle PW1 display
+- Nearby weather, temperature, humidity, date, time, and battery percentage
+- Next 8 hours and next 3 days layout optimized for 758x1024 Kindle PW1 display
 - OpenWeatherMap API support
 - Wi-Fi on only during refresh, then off again to reduce power usage
-- Periodic E Ink refresh with occasional full refresh to reduce ghosting
+- Single forecast API call per refresh to reduce network time
+- Periodic E Ink refresh with less frequent full refresh to reduce ghosting and power use
 - KUAL menu entries for starting the weather clock and running an environment scan
 
 ## Files
 
-- `render.py` - Fetches weather data, reads Kindle battery percentage, and renders `weather.png`
-- `worker.sh` - Main loop for Wi-Fi, rendering, display refresh, and sleep interval
+- `render.py` - Fetches forecast data, reads Kindle battery percentage, and renders `weather.png`
+- `worker.sh` - Main loop for Wi-Fi, rendering, display refresh, and low-power sleep interval
 - `start.sh` - Starts the worker process
 - `scan.sh` - Writes Kindle environment diagnostics
 - `config.xml` - Extension metadata and settings
@@ -53,5 +54,6 @@ A Kindle Paperwhite 1 weather-station extension that renders current weather and
 
 - Do not commit a real API key to the repository.
 - `log.txt` and runtime diagnostics should stay local.
-- The default refresh loop in `worker.sh` sleeps for 3 hours between updates.
+- The default refresh loop in `worker.sh` sleeps for 4 hours between updates.
 - Battery percentage is shown under the time. If the battery value cannot be read, it displays `電量 --%`.
+- OpenWeatherMap's forecast API uses 3-hour slots, so the 8-hour view shows the closest three forecast entries.
