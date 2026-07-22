@@ -7,7 +7,10 @@ import time
 import traceback
 
 import requests
+import urllib3
 from PIL import Image, ImageDraw, ImageFont
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TARGET_DIR = "/mnt/us/extensions/weatheriot"
@@ -55,7 +58,7 @@ def fetch_weather():
     session = requests.Session()
     for _ in range(2):
         try:
-            r = session.get(ONECALL_URL, timeout=12)
+            r = session.get(ONECALL_URL, timeout=12, verify=False)
             if r.status_code == 200:
                 return r.json()
         except Exception:
