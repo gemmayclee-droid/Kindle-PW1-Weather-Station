@@ -5,7 +5,6 @@ import subprocess
 import sys
 import time
 import traceback
-from collections import Counter, defaultdict
 
 import requests
 from PIL import Image, ImageDraw, ImageFont
@@ -15,10 +14,13 @@ TARGET_DIR = "/mnt/us/extensions/weatheriot"
 
 city = sys.argv[1] if len(sys.argv) > 1 else "Shanghai"
 apikey = sys.argv[2] if len(sys.argv) > 2 else "YOUR_API_KEY"
+lat = sys.argv[3] if len(sys.argv) > 3 else "31.2304"
+lon = sys.argv[4] if len(sys.argv) > 4 else "121.4737"
 
-FORECAST_URL = (
-    "http://api.openweathermap.org/data/2.5/forecast"
-    f"?q={city}&appid={apikey}&units=metric&lang=zh_tw"
+ONECALL_URL = (
+    "https://api.openweathermap.org/data/3.0/onecall"
+    f"?lat={lat}&lon={lon}&appid={apikey}&units=metric&lang=zh_tw"
+    "&exclude=minutely,alerts"
 )
 
 WEATHER_MAP = {
@@ -49,11 +51,11 @@ def get_weather_icon(desc):
     return "·"
 
 
-def fetch_forecast():
+def fetch_weather():
     session = requests.Session()
     for _ in range(2):
         try:
-            r = session.get(FORECAST_URL, timeout=12)
+            r = session.get(ONECALL_URL, timeout=12)
             if r.status_code == 200:
                 return r.json()
         except Exception:
@@ -115,31 +117,8 @@ def right_text(draw, x_right, y, text, font, fill):
     draw.text((x_right - text_width(font, text), y), text, font=font, fill=fill)
 
 
-def build_day_summaries(items, limit=3):
-    today = time.strftime("%Y-%m-%d")
-    grouped = defaultdict(list)
-
-    for item in items:
-        day = item["dt_txt"][:10]
-        if day > today:
-            grouped[day].append(item)
-
-    summaries = []
-    for day in sorted(grouped.keys())[:limit]:
-        rows = grouped[day]
-        temps = [row["main"]["temp"] for row in rows]
-        descs = [map_desc(row) for row in rows]
-        desc = Counter(descs).most_common(1)[0][0]
-        summaries.append(
-            {
-                "date": day[5:].replace("-", "/"),
-                "desc": desc,
-                "min": round(min(temps)),
-                "max": round(max(temps)),
-            }
-        )
-
-    return summaries
+def fmt_time(ts, timezone_offset, fmt="%H:%M"):
+    return time.strftime(fmt, time.gmtime(ts + timezone_offset))
 
 
 def save_optimized(img):
@@ -155,77 +134,83 @@ def save_optimized(img):
 
 
 try:
-    forecast = fetch_forecast()
-    if not forecast or "list" not in forecast or not forecast["list"]:
-        raise Exception("無法取得天氣預報 API 數據")
+    weather = fetch_weather()
+    if not weather or "current" not in weather or "hourly" not in weather:
+        raise Exception("無法取得逐小時天氣 API 數據")
 
-    items = forecast["list"]
-    now_item = items[0]
-    now_desc = map_desc(now_item)
-    now_temp = round(now_item["main"]["temp"])
-    now_hum = now_item["main"].get("humidity", "--")
+    timezone_offset = int(weather.get("timezone_offset", 8 * 3600))
+    current = weather["current"]
+    hourly = [
+        item for item in weather["hourly"]
+        if item.get("dt", 0) > current.get("dt", time.time())
+    ][:8]
+    daily = weather.get("daily", [])[1:4]
+
+    if len(hourly) < 8:
+        raise Exception("逐小時天氣資料不足 8 筆")
+
+    now_desc = map_desc(current)
+    now_temp = round(current["temp"])
+    now_hum = current.get("humidity", "--")
     battery = get_battery_percent()
-
-    cutoff_ts = time.time() + 8 * 3600
-    hourly = [item for item in items if item.get("dt", 0) <= cutoff_ts][:3]
-    if len(hourly) < 3:
-        hourly = items[:3]
-    days = build_day_summaries(items, 3)
 
     W, H = 758, 1024
     img = Image.new("L", (W, H), 240)
     draw = ImageDraw.Draw(img)
 
-    f_huge = get_font(112)
-    f_big = get_font(78)
-    f_mid = get_font(48)
-    f_small = get_font(34)
-    f_tiny = get_font(28)
+    f_huge = get_font(108)
+    f_big = get_font(72)
+    f_mid = get_font(46)
+    f_small = get_font(31)
+    f_tiny = get_font(25)
 
     # Header
-    draw.text((45, 40), city.upper(), font=f_mid, fill=20)
-    draw.text((45, 100), time.strftime("%Y/%m/%d %a"), font=f_tiny, fill=20)
-    right_text(draw, W - 45, 40, time.strftime("%H:%M"), f_mid, 20)
-    right_text(draw, W - 45, 100, f"電量 {battery}", f_tiny, 20)
+    draw.text((45, 36), city.upper(), font=f_mid, fill=20)
+    draw.text((45, 92), time.strftime("%Y/%m/%d %a"), font=f_tiny, fill=20)
+    right_text(draw, W - 45, 36, time.strftime("%H:%M"), f_mid, 20)
+    right_text(draw, W - 45, 92, f"電量 {battery}", f_tiny, 20)
 
-    # Current / nearest forecast
-    draw.text((55, 175), get_weather_icon(now_desc), font=f_big, fill=20)
-    draw.text((205, 150), f"{now_temp}°C", font=f_huge, fill=20)
-    draw.text((215, 295), f"{now_desc} | 濕度 {now_hum}%", font=f_small, fill=20)
+    # Current weather
+    draw.text((55, 158), get_weather_icon(now_desc), font=f_big, fill=20)
+    draw.text((205, 132), f"{now_temp}°C", font=f_huge, fill=20)
+    draw.text((215, 270), f"{now_desc} | 濕度 {now_hum}%", font=f_small, fill=20)
 
-    draw.line((45, 375, 713, 375), fill=80, width=6)
+    draw.line((45, 335, 713, 335), fill=80, width=5)
 
-    # Next 8 hours. OpenWeather 3-hour forecast gives the closest three slots.
-    draw.text((45, 400), "未來八小時", font=f_small, fill=50)
-    y = 455
+    # Next 8 hours, one row per hour.
+    draw.text((45, 358), "未來八小時", font=f_small, fill=50)
+    y = 405
     for item in hourly:
-        hour = item["dt_txt"][11:16]
+        hour = fmt_time(item["dt"], timezone_offset)
         desc = map_desc(item)
-        temp = f"{round(item['main']['temp'])}°C"
-        hum = f"{item['main'].get('humidity', '--')}%"
-        draw.text((60, y), hour, font=f_small, fill=20)
-        draw.text((190, y), get_weather_icon(desc), font=f_small, fill=20)
-        draw.text((280, y), desc, font=f_small, fill=20)
-        right_text(draw, 610, y, temp, f_small, 20)
-        right_text(draw, 705, y + 4, hum, f_tiny, 50)
-        y += 74
+        temp = f"{round(item['temp'])}°C"
+        hum = f"{item.get('humidity', '--')}%"
 
-    draw.line((45, 690, 713, 690), fill=80, width=6)
+        draw.text((55, y), hour, font=f_tiny, fill=20)
+        draw.text((155, y - 3), get_weather_icon(desc), font=f_small, fill=20)
+        draw.text((225, y), desc, font=f_tiny, fill=20)
+        right_text(draw, 610, y, temp, f_tiny, 20)
+        right_text(draw, 705, y, hum, f_tiny, 50)
+        y += 36
+
+    draw.line((45, 710, 713, 710), fill=80, width=5)
 
     # Next 3 days
-    draw.text((45, 715), "未來三天", font=f_small, fill=50)
-    y = 770
-    for day in days:
-        temp_range = f"{day['min']}~{day['max']}°C"
-        draw.text((60, y), day["date"], font=f_small, fill=20)
-        draw.text((190, y), get_weather_icon(day["desc"]), font=f_small, fill=20)
-        draw.text((280, y), day["desc"], font=f_small, fill=20)
+    draw.text((45, 735), "未來三天", font=f_small, fill=50)
+    y = 785
+    for day in daily:
+        desc = map_desc(day)
+        date = fmt_time(day["dt"], timezone_offset, "%m/%d")
+        temp_range = f"{round(day['temp']['min'])}~{round(day['temp']['max'])}°C"
+        draw.text((60, y), date, font=f_small, fill=20)
+        draw.text((190, y), get_weather_icon(desc), font=f_small, fill=20)
+        draw.text((280, y), desc, font=f_small, fill=20)
         right_text(draw, 705, y, temp_range, f_small, 20)
-        y += 68
+        y += 62
 
     draw.text(
         (45, 960),
-        f"更新成功：{time.strftime('%H:%M')} | 單次預報 API",
+        f"更新成功：{time.strftime('%H:%M')} | One Call hourly",
         font=f_tiny,
         fill=20,
     )

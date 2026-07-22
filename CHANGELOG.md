@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.3.0 - 2026-07-22
+
+- Switched the 8-hour weather view to true hourly data using OpenWeatherMap One Call.
+- Added Shanghai latitude and longitude settings to `config.xml`.
+- Updated `worker.sh` to pass latitude and longitude to `render.py`.
+- Updated documentation to clarify that the 8-hour view shows one row per hour.
+
 ## 1.2.0 - 2026-07-22
 
 - Changed the weather layout to show the next 8 hours and next 3 days.
