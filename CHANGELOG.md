@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.9.0 - 2026-07-23
+
+- Reworked README language switching into a GitHub-compatible tab navigation layout.
+- Kept Chinese as the default first section while preserving the English section and sample image.
+
 ## 1.8.0 - 2026-07-23
 
 - Reworked README into Chinese-first and English collapsible sections.

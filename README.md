@@ -1,15 +1,28 @@
 # Kindle PW1 Weather Station
 
-<details open>
-<summary><strong>中文说明</strong></summary>
+<p align="center">
+  <a href="#中文"><strong>中文</strong></a>
+  ·
+  <a href="#english"><strong>English</strong></a>
+</p>
+
+---
+
+## 中文
+
+<p align="center">
+  <strong>中文</strong>
+  ·
+  <a href="#english">English</a>
+</p>
 
 Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐小时预报、未来 3 天预报渲染成灰阶 `weather.png`，并显示在 Kindle E Ink 屏幕上。
 
-## PNG 样例图
+### PNG 样例图
 
 ![Kindle PW1 Weather Station sample](weather.png)
 
-## 功能
+### 功能
 
 - 当前天气、温度、湿度、日期、时间与电池百分比
 - 未来 8 小时逐小时显示，并显示未来 3 天天气
@@ -19,7 +32,7 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 - 单次更新完成后 `worker.sh` 会退出，让 Kindle 可以休眠
 - 可安装低耗电 4 小时定时更新
 
-## 文件
+### 文件
 
 - `render.py` - 获取 Open-Meteo 数据、读取电池百分比，并生成 `weather.png`
 - `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
@@ -31,7 +44,7 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 - `font.ttc` - CJK/天气文字渲染字体
 - `weather.png` - 预览用生成图，Kindle 实际运行时会重新生成
 
-## 安装
+### 安装
 
 1. 将项目文件复制到 Kindle：
 
@@ -62,7 +75,7 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
    - `Install 4h Schedule` - 立即更新并安装每 4 小时定时更新
    - `Remove Schedule` - 停止自动更新
 
-## 需求
+### 需求
 
 - 已越狱 Kindle Paperwhite 1
 - KUAL
@@ -70,24 +83,29 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 - Python packages: `requests`, `Pillow`
 - 不需要天气 API key
 
-## 注意事项
+### 注意事项
 
 - `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
 - `weather.tmp.png`、`log.txt` 与运行诊断文件应留在本机，不提交到 GitHub。
 - `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
 
-</details>
+---
 
-<details>
-<summary><strong>English</strong></summary>
+## English
+
+<p align="center">
+  <a href="#中文">中文</a>
+  ·
+  <strong>English</strong>
+</p>
 
 Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the next 8 hourly forecasts, and the next 3 days to a grayscale `weather.png`, then displays it on the Kindle E Ink screen.
 
-## PNG Sample
+### PNG Sample
 
 ![Kindle PW1 Weather Station sample](weather.png)
 
-## Features
+### Features
 
 - Current weather, temperature, humidity, date, time, and battery percentage
 - Next 8 hours with one row per hour, plus next 3 days
@@ -97,7 +115,7 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 - Single-shot `worker.sh` exits after each refresh so Kindle can sleep
 - Optional cron schedule for low-power 4-hour refreshes
 
-## Files
+### Files
 
 - `render.py` - Fetches Open-Meteo data, reads battery percentage, and renders `weather.png`
 - `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
@@ -109,7 +127,7 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 - `font.ttc` - Font used for CJK/weather text rendering
 - `weather.png` - Generated preview image; Kindle will regenerate it at runtime
 
-## Setup
+### Setup
 
 1. Copy the project files to Kindle:
 
@@ -140,7 +158,7 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
    - `Install 4h Schedule` - refresh now and then every 4 hours
    - `Remove Schedule` - stop automatic refreshes
 
-## Requirements
+### Requirements
 
 - Jailbroken Kindle Paperwhite 1
 - KUAL
@@ -148,10 +166,8 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 - Python packages: `requests`, `Pillow`
 - No weather API key is required
 
-## Notes
+### Notes
 
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
 - `weather.tmp.png`, `log.txt`, and runtime diagnostics should stay local.
 - `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
-
-</details>
