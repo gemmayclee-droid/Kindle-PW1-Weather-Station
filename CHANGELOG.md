@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.7.0 - 2026-07-23
+
+- Added `<lang>` setting to `config.xml` for Chinese or English rendering.
+- Added bilingual weather labels and WMO weather descriptions to `render.py`.
+- Updated `worker.sh` to pass the configured language to `render.py`.
+- Reintroduced a generated `weather.png` preview image.
+- Expanded README with Chinese and English instructions.
+
 ## 1.6.0 - 2026-07-23
 
 - Removed unused OpenWeatherMap API key and unit settings from `config.xml`.

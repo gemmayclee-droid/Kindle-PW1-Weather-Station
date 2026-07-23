@@ -75,9 +75,15 @@ fi
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
 LON=$(grep "<lon>" config.xml | sed 's/.*<lon>\(.*\)<\/lon>.*/\1/' | tr -d '\r' | tr -d ' ')
+LANGUAGE=$(grep "<lang>" config.xml | sed 's/.*<lang>\(.*\)<\/lang>.*/\1/' | tr -d '\r' | tr -d ' ')
+
+if [ -z "$LANGUAGE" ]; then
+    LANGUAGE="zh"
+fi
 
 echo "城市: $CITY" >> "$LOG"
 echo "座標: $LAT,$LON" >> "$LOG"
+echo "語言: $LANGUAGE" >> "$LOG"
 
 # ==================================================
 # 更新圖片
@@ -86,7 +92,7 @@ echo "座標: $LAT,$LON" >> "$LOG"
 echo "render.py 開始時間: $(date)" >> "$LOG"
 START_TS=$(date +%s)
 if [ "$WIFI_OK" -eq 1 ]; then
-    timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" >> "$LOG" 2>&1
+    timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
     RET=$?
 else
     RET=0

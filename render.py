@@ -18,6 +18,9 @@ TARGET_DIR = "/mnt/us/extensions/weatheriot"
 city = sys.argv[1] if len(sys.argv) > 1 else "Shanghai"
 lat = sys.argv[2] if len(sys.argv) > 2 else "31.2304"
 lon = sys.argv[3] if len(sys.argv) > 3 else "121.4737"
+language = sys.argv[4].lower() if len(sys.argv) > 4 else "zh"
+if language not in ("zh", "en"):
+    language = "zh"
 
 OPEN_METEO_URL = (
     "https://api.open-meteo.com/v1/forecast"
@@ -29,47 +32,73 @@ OPEN_METEO_URL = (
 )
 
 WMO_MAP = {
-    0: "晴天",
-    1: "晴天",
-    2: "多雲",
-    3: "陰天",
-    45: "霧",
-    48: "霧",
-    51: "毛雨",
-    53: "毛雨",
-    55: "毛雨",
-    56: "凍雨",
-    57: "凍雨",
-    61: "下雨",
-    63: "下雨",
-    65: "大雨",
-    66: "凍雨",
-    67: "凍雨",
-    71: "下雪",
-    73: "下雪",
-    75: "大雪",
-    77: "下雪",
-    80: "陣雨",
-    81: "陣雨",
-    82: "大雨",
-    85: "陣雪",
-    86: "大雪",
-    95: "雷雨",
-    96: "雷雨",
-    99: "雷雨",
+    0: ("晴天", "Clear"),
+    1: ("晴天", "Mainly Clear"),
+    2: ("多雲", "Cloudy"),
+    3: ("陰天", "Overcast"),
+    45: ("霧", "Fog"),
+    48: ("霧", "Fog"),
+    51: ("毛雨", "Drizzle"),
+    53: ("毛雨", "Drizzle"),
+    55: ("毛雨", "Drizzle"),
+    56: ("凍雨", "Freezing Rain"),
+    57: ("凍雨", "Freezing Rain"),
+    61: ("下雨", "Rain"),
+    63: ("下雨", "Rain"),
+    65: ("大雨", "Heavy Rain"),
+    66: ("凍雨", "Freezing Rain"),
+    67: ("凍雨", "Freezing Rain"),
+    71: ("下雪", "Snow"),
+    73: ("下雪", "Snow"),
+    75: ("大雪", "Heavy Snow"),
+    77: ("下雪", "Snow"),
+    80: ("陣雨", "Showers"),
+    81: ("陣雨", "Showers"),
+    82: ("大雨", "Heavy Rain"),
+    85: ("陣雪", "Snow Showers"),
+    86: ("大雪", "Heavy Snow"),
+    95: ("雷雨", "Thunderstorm"),
+    96: ("雷雨", "Thunderstorm"),
+    99: ("雷雨", "Thunderstorm"),
 }
+
+TEXT = {
+    "zh": {
+        "battery": "電量",
+        "humidity": "濕度",
+        "next_hours": "未來八小時",
+        "next_days": "未來三天",
+        "updated": "更新成功",
+        "unknown": "未知",
+        "fetch_error": "無法取得逐小時天氣 API 數據",
+        "short_rows": "逐小時天氣資料不足 8 筆，實際 {count} 筆",
+    },
+    "en": {
+        "battery": "Battery",
+        "humidity": "Humidity",
+        "next_hours": "Next 8 Hours",
+        "next_days": "Next 3 Days",
+        "updated": "Updated",
+        "unknown": "Unknown",
+        "fetch_error": "Unable to fetch hourly weather data",
+        "short_rows": "Hourly weather data has fewer than 8 rows: {count}",
+    },
+}
+
+LABEL = TEXT[language]
 
 
 def get_weather_icon(desc):
-    if "晴" in desc:
+    lower_desc = desc.lower()
+    if "晴" in desc or "clear" in lower_desc:
         return "☀"
-    if "雲" in desc or "陰" in desc:
+    if "雲" in desc or "陰" in desc or "cloud" in lower_desc or "overcast" in lower_desc:
         return "☁"
-    if "雨" in desc:
+    if "雨" in desc or "rain" in lower_desc or "shower" in lower_desc or "drizzle" in lower_desc:
         return "☂"
-    if "雪" in desc:
+    if "雪" in desc or "snow" in lower_desc:
         return "❄"
-    if "雷" in desc:
+    if "雷" in desc or "thunder" in lower_desc:
         return "⚡"
     return "·"
 
@@ -126,9 +155,12 @@ def get_battery_percent():
 
 def map_code(code):
     try:
-        return WMO_MAP.get(int(code), "未知")
+        item = WMO_MAP.get(int(code))
+        if not item:
+            return LABEL["unknown"]
+        return item[0] if language == "zh" else item[1]
     except Exception:
-        return "未知"
+        return LABEL["unknown"]
 
 
 def get_font(size):
@@ -220,7 +252,7 @@ def build_daily_rows(weather):
 try:
     weather = fetch_weather()
     if not weather or "hourly" not in weather:
-        raise Exception("無法取得逐小時天氣 API 數據")
+        raise Exception(LABEL["fetch_error"])
 
     current = weather.get("current", {})
     current_desc = map_code(current.get("weather_code"))
@@ -232,7 +264,7 @@ try:
     daily_rows = build_daily_rows(weather)
 
     if len(hourly_rows) < 8:
-        raise Exception(f"逐小時天氣資料不足 8 筆，實際 {len(hourly_rows)} 筆")
+        raise Exception(LABEL["short_rows"].format(count=len(hourly_rows)))
 
     W, H = 758, 1024
     img = Image.new("L", (W, H), 240)
@@ -248,17 +280,17 @@ try:
     draw.text((45, 36), city.upper(), font=f_mid, fill=20)
     draw.text((45, 92), time.strftime("%Y/%m/%d %a"), font=f_tiny, fill=20)
     right_text(draw, W - 45, 36, time.strftime("%H:%M"), f_mid, 20)
-    right_text(draw, W - 45, 92, f"電量 {battery}", f_tiny, 20)
+    right_text(draw, W - 45, 92, f"{LABEL['battery']} {battery}", f_tiny, 20)
 
     # Current weather
     draw.text((55, 158), get_weather_icon(current_desc), font=f_big, fill=20)
     draw.text((205, 132), f"{current_temp}°C", font=f_huge, fill=20)
-    draw.text((215, 270), f"{current_desc} | 濕度 {current_hum}%", font=f_small, fill=20)
+    draw.text((215, 270), f"{current_desc} | {LABEL['humidity']} {current_hum}%", font=f_small, fill=20)
 
     draw.line((45, 335, 713, 335), fill=80, width=5)
 
     # Next 8 hours, one row per hour.
-    draw.text((45, 358), "未來八小時", font=f_small, fill=50)
+    draw.text((45, 358), LABEL["next_hours"], font=f_small, fill=50)
     y = 405
     for item in hourly_rows:
         draw.text((55, y), item["time"], font=f_tiny, fill=20)
@@ -271,7 +303,7 @@ try:
     draw.line((45, 710, 713, 710), fill=80, width=5)
 
     # Next 3 days
-    draw.text((45, 735), "未來三天", font=f_small, fill=50)
+    draw.text((45, 735), LABEL["next_days"], font=f_small, fill=50)
     y = 785
     for day in daily_rows:
         temp_range = f"{day['min']}~{day['max']}°C"
@@ -283,7 +315,7 @@ try:
 
     draw.text(
         (45, 960),
-        f"更新成功：{time.strftime('%H:%M')} | Open-Meteo hourly",
+        f"{LABEL['updated']}: {time.strftime('%H:%M')} | Open-Meteo hourly",
         font=f_tiny,
         fill=20,
     )
