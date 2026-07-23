@@ -47,7 +47,6 @@ Weather Clock
 - `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
 - `start.sh` - 手动更新一次
 - `schedule.sh` - 启动内建低耗电 4 小时定时，并立即更新一次
-- `scheduler.sh` - 内建 4 小时定时器；不依赖 `crontab`
 - `unschedule.sh` - 移除定时，并恢复省电设置
 - `config.xml` - KUAL 扩展信息与天气设置
 - `menu.json` - KUAL 菜单配置
@@ -96,9 +95,19 @@ Weather Clock
 ### 注意事项
 
 - `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
+- Kindle 需要下载这些文件到 `/mnt/us/extensions/weatheriot`：
+  - `config.xml`
+  - `font.ttc`
+  - `menu.json`
+  - `render.py`
+  - `schedule.sh`
+  - `start.sh`
+  - `unschedule.sh`
+  - `worker.sh`
+  - `weather.png` 可选，只是首次显示前的预览图
 - `weather.tmp.png`、`log.txt` 与运行诊断文件应留在本机，不提交到 GitHub。
 - `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
-- `Install 4h Schedule` 会启动内建 scheduler，并先立即更新一次；不需要 `crontab`。
+- `Install 4h Schedule` 会启动 `schedule.sh` 内建循环，并先立即更新一次；不需要 `crontab`。
 
 ---
 
@@ -141,7 +150,6 @@ Weather Clock
 - `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
 - `start.sh` - Runs one manual refresh
 - `schedule.sh` - Starts the built-in low-power 4-hour schedule and runs one immediate refresh
-- `scheduler.sh` - Built-in 4-hour timer; does not depend on `crontab`
 - `unschedule.sh` - Removes the schedule and restores low-power settings
 - `config.xml` - KUAL extension metadata and weather settings
 - `menu.json` - KUAL menu configuration
@@ -190,6 +198,16 @@ Weather Clock
 ### Notes
 
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
+- Download these files to `/mnt/us/extensions/weatheriot` on Kindle:
+  - `config.xml`
+  - `font.ttc`
+  - `menu.json`
+  - `render.py`
+  - `schedule.sh`
+  - `start.sh`
+  - `unschedule.sh`
+  - `worker.sh`
+  - `weather.png` is optional; it is only the preview image before the first refresh
 - `weather.tmp.png`, `log.txt`, and runtime diagnostics should stay local.
 - `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
-- `Install 4h Schedule` starts the built-in scheduler and runs one immediate refresh first; `crontab` is not required.
+- `Install 4h Schedule` starts the built-in `schedule.sh` loop and runs one immediate refresh first; `crontab` is not required.

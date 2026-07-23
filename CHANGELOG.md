@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.13.0 - 2026-07-23
+
+- Merged the scheduling loop into `schedule.sh` and removed `scheduler.sh`.
+- Added a `schedule.pid` file so `unschedule.sh` can stop the built-in scheduler cleanly.
+- Updated README with the exact files to copy to Kindle.
+
 ## 1.12.0 - 2026-07-23
 
 - Removed the `crontab` dependency from `schedule.sh`.
