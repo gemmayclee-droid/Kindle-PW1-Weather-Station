@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.11.0 - 2026-07-23
+
+- Added `scheduler.sh` fallback for Kindle systems without `crontab`.
+- Changed `schedule.sh` to stop old workers, install the best available scheduler, and run the first refresh in the foreground.
+- Changed `worker.sh` to attempt the HTTPS weather fetch even when ping-based Wi-Fi checks fail.
+- Updated README with the no-crontab fallback behavior.
+
 ## 1.10.0 - 2026-07-23
 
 - Added KUAL menu samples to both README language sections.

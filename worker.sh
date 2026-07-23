@@ -65,7 +65,7 @@ while [ $COUNT -lt 10 ]; do
 done
 
 if [ "$WIFI_OK" -ne 1 ]; then
-    echo "WiFi 連線失敗，本次跳過網路更新" >> "$LOG"
+    echo "WiFi ping 檢查失敗，仍嘗試 HTTPS 天氣更新" >> "$LOG"
 fi
 
 # ==================================================
@@ -91,12 +91,8 @@ echo "語言: $LANGUAGE" >> "$LOG"
 
 echo "render.py 開始時間: $(date)" >> "$LOG"
 START_TS=$(date +%s)
-if [ "$WIFI_OK" -eq 1 ]; then
-    timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
-    RET=$?
-else
-    RET=0
-fi
+timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
+RET=$?
 END_TS=$(date +%s)
 echo "render.py 結束時間: $(date)" >> "$LOG"
 echo "render.py 執行秒數: $((END_TS - START_TS)) 秒" >> "$LOG"

@@ -12,7 +12,7 @@ if command -v crontab >/dev/null 2>&1; then
     rm -f "$CRON_FILE"
 fi
 
+pkill -f "$BASE/scheduler.sh" >> "$LOG" 2>&1
 pkill -f "$BASE/worker.sh" >> "$LOG" 2>&1
 lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
-
