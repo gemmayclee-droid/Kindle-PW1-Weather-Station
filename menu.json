@@ -11,7 +11,7 @@
       "refresh": false
     },
     {
-      "name": "Install 6h Schedule",
+      "name": "Install 4h Schedule",
       "action": "./schedule.sh",
       "exitmenu": true,
       "refresh": false

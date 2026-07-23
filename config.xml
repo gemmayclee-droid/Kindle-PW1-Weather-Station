@@ -13,7 +13,7 @@
         <lon>121.4737</lon>
         <apikey>YOUR_API_KEY</apikey>
         <unit>metric</unit>
-        <interval>21600</interval>
+        <interval>14400</interval>
     </settings>
 
     <menus>
