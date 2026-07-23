@@ -46,8 +46,8 @@ Weather Clock
 - `render.py` - 获取 Open-Meteo 数据、读取电池百分比，并生成 `weather.png`
 - `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
 - `start.sh` - 手动更新一次
-- `schedule.sh` - 安装低耗电定时；若没有 `crontab`，会自动使用 fallback scheduler，并立即更新一次
-- `scheduler.sh` - 无 `crontab` 环境下的 fallback 定时器
+- `schedule.sh` - 启动内建低耗电 4 小时定时，并立即更新一次
+- `scheduler.sh` - 内建 4 小时定时器；不依赖 `crontab`
 - `unschedule.sh` - 移除定时，并恢复省电设置
 - `config.xml` - KUAL 扩展信息与天气设置
 - `menu.json` - KUAL 菜单配置
@@ -98,7 +98,7 @@ Weather Clock
 - `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
 - `weather.tmp.png`、`log.txt` 与运行诊断文件应留在本机，不提交到 GitHub。
 - `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
-- `Install 4h Schedule` 会先立即更新一次；如果 Kindle 没有 `crontab`，会自动启用 fallback scheduler。
+- `Install 4h Schedule` 会启动内建 scheduler，并先立即更新一次；不需要 `crontab`。
 
 ---
 
@@ -140,8 +140,8 @@ Weather Clock
 - `render.py` - Fetches Open-Meteo data, reads battery percentage, and renders `weather.png`
 - `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
 - `start.sh` - Runs one manual refresh
-- `schedule.sh` - Installs the low-power schedule; when `crontab` is unavailable, it uses the fallback scheduler and runs one immediate refresh
-- `scheduler.sh` - Fallback timer for environments without `crontab`
+- `schedule.sh` - Starts the built-in low-power 4-hour schedule and runs one immediate refresh
+- `scheduler.sh` - Built-in 4-hour timer; does not depend on `crontab`
 - `unschedule.sh` - Removes the schedule and restores low-power settings
 - `config.xml` - KUAL extension metadata and weather settings
 - `menu.json` - KUAL menu configuration
@@ -192,4 +192,4 @@ Weather Clock
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
 - `weather.tmp.png`, `log.txt`, and runtime diagnostics should stay local.
 - `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
-- `Install 4h Schedule` runs one immediate refresh first. If Kindle has no `crontab`, it automatically starts the fallback scheduler.
+- `Install 4h Schedule` starts the built-in scheduler and runs one immediate refresh first; `crontab` is not required.

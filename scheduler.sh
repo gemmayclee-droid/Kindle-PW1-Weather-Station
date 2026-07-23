@@ -17,11 +17,17 @@ if [ "$INTERVAL" -lt 3600 ]; then
     INTERVAL=14400
 fi
 
-echo "=== fallback scheduler 啟動: $(date) ===" >> "$LOG"
-echo "fallback 更新間隔: $INTERVAL 秒" >> "$LOG"
+echo "=== scheduler 啟動: $(date) ===" >> "$LOG"
+echo "scheduler 更新間隔: $INTERVAL 秒" >> "$LOG"
+
+if [ "$1" = "sleep-first" ]; then
+    echo "scheduler 先休眠 $INTERVAL 秒" >> "$LOG"
+    sleep "$INTERVAL"
+fi
 
 while true; do
-    sleep "$INTERVAL"
-    echo "=== fallback scheduler 觸發更新: $(date) ===" >> "$LOG"
+    echo "=== scheduler 觸發更新: $(date) ===" >> "$LOG"
     /bin/sh "$BASE/worker.sh" >> "$LOG" 2>&1
+    echo "scheduler 休眠 $INTERVAL 秒" >> "$LOG"
+    sleep "$INTERVAL"
 done

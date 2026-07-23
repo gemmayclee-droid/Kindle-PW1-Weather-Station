@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.12.0 - 2026-07-23
+
+- Removed the `crontab` dependency from `schedule.sh`.
+- Changed `schedule.sh` to run one foreground refresh immediately, then start `scheduler.sh` for future updates.
+- Changed `scheduler.sh` to support sleeping first, preserving the proven 4-hour loop scheduling model with single-shot `worker.sh` refreshes.
+
 ## 1.11.0 - 2026-07-23
 
 - Added `scheduler.sh` fallback for Kindle systems without `crontab`.
