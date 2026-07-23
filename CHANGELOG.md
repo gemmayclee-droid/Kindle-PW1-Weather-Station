@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.10.0 - 2026-07-23
+
+- Added KUAL menu samples to both README language sections.
+
 ## 1.9.0 - 2026-07-23
 
 - Reworked README language switching into a GitHub-compatible tab navigation layout.

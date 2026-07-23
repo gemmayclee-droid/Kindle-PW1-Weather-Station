@@ -22,6 +22,15 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 
 ![Kindle PW1 Weather Station sample](weather.png)
 
+### KUAL 菜单样例
+
+```text
+Weather Clock
+├─ Update Once
+├─ Install 4h Schedule
+└─ Remove Schedule
+```
+
 ### 功能
 
 - 当前天气、温度、湿度、日期、时间与电池百分比
@@ -104,6 +113,15 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 ### PNG Sample
 
 ![Kindle PW1 Weather Station sample](weather.png)
+
+### KUAL Menu Sample
+
+```text
+Weather Clock
+├─ Update Once
+├─ Install 4h Schedule
+└─ Remove Schedule
+```
 
 ### Features
 
