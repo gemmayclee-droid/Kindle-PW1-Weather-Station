@@ -5,8 +5,20 @@
     "priority": 0,
     "items": [
     {
-      "name": "Start Weather Clock",
+      "name": "Update Once",
       "action": "./start.sh",
+      "exitmenu": true,
+      "refresh": false
+    },
+    {
+      "name": "Install 6h Schedule",
+      "action": "./schedule.sh",
+      "exitmenu": true,
+      "refresh": false
+    },
+    {
+      "name": "Remove Schedule",
+      "action": "./unschedule.sh",
       "exitmenu": true,
       "refresh": false
     },

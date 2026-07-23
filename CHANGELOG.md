@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0 - 2026-07-23
+
+- Changed `worker.sh` from a resident infinite loop to a single-shot refresh process.
+- Added `schedule.sh` and `unschedule.sh` for low-power cron-based automatic updates.
+- Restored Kindle screensaver permission after each refresh so the device can sleep between updates.
+- Shortened Wi-Fi connection waiting and render timeout windows to reduce awake time.
+- Changed the default automatic refresh interval to 6 hours.
+
 ## 1.4.0 - 2026-07-22
 
 - Switched hourly rendering from OpenWeatherMap One Call to Open-Meteo hourly forecast data.

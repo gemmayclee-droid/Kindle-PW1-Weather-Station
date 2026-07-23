@@ -9,14 +9,17 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
 - Open-Meteo hourly forecast support
 - Wi-Fi on only during refresh, then off again to reduce power usage
 - Single Open-Meteo forecast request per refresh to reduce network time
-- Periodic E Ink refresh with less frequent full refresh to reduce ghosting and power use
+- Single-shot worker that exits after each refresh so Kindle can sleep between updates
+- Optional cron schedule for low-power 6-hour refreshes
 - KUAL menu entries for starting the weather clock and running an environment scan
 
 ## Files
 
 - `render.py` - Fetches Open-Meteo hourly/daily data, reads Kindle battery percentage, and renders `weather.png`
-- `worker.sh` - Main loop for Wi-Fi, rendering, display refresh, and low-power sleep interval
-- `start.sh` - Starts the worker process
+- `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
+- `start.sh` - Runs one manual refresh
+- `schedule.sh` - Installs the low-power cron schedule and runs one immediate refresh
+- `unschedule.sh` - Removes the cron schedule and restores low-power settings
 - `scan.sh` - Writes Kindle environment diagnostics
 - `config.xml` - Extension metadata and settings
 - `menu.json` - KUAL menu configuration
@@ -37,12 +40,16 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
    <city>Shanghai</city>
    <lat>31.2304</lat>
    <lon>121.4737</lon>
-       <apikey>YOUR_API_KEY</apikey>
+   <apikey>YOUR_API_KEY</apikey>
    ```
 
    The `apikey` field is kept for compatibility with older versions, but the current renderer uses Open-Meteo and does not require an API key.
 
-3. From KUAL, open `Weather Clock` and choose `Start Weather Clock`.
+3. From KUAL, open `Weather Clock` and choose:
+
+   - `Update Once` to refresh immediately.
+   - `Install 6h Schedule` to refresh now and then every 6 hours.
+   - `Remove Schedule` to stop automatic refreshes.
 
 ## Requirements
 
@@ -58,6 +65,7 @@ A Kindle Paperwhite 1 weather-station extension that renders Shanghai weather, t
 
 - Do not commit a real API key to the repository.
 - `log.txt` and runtime diagnostics should stay local.
-- The default refresh loop in `worker.sh` sleeps for 4 hours between updates.
+- The default automatic schedule refreshes every 6 hours. Change `<interval>` in `config.xml` if you want a different interval.
+- `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
 - Battery percentage is shown under the time. If the battery value cannot be read, it displays `電量 --%`.
 - The 8-hour view uses Open-Meteo `hourly` data, so it shows one row per hour without requiring One Call API access.
