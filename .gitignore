@@ -16,6 +16,7 @@ htmlcov/
 
 .DS_Store
 log.txt
+schedule.pid
 
 work/
 outputs/

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.14.0 - 2026-07-23
+
+- Restored `worker.sh` as a single-shot refresh script so manual updates remain reliable.
+- Changed `schedule.sh` to own the 4-hour background loop and call `worker.sh` once per cycle.
+- Made `Install 4h Schedule` start the first refresh immediately, then sleep for the configured interval.
+- Added clearer worker logging for version, render timing, image size before and after rendering, and cleanup state.
+- Kept Wi-Fi and `preventScreenSaver` enabled only during the refresh cycle.
+
 ## 1.13.0 - 2026-07-23
 
 - Merged the scheduling loop into `schedule.sh` and removed `scheduler.sh`.

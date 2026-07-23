@@ -38,15 +38,15 @@ Weather Clock
 - 可在 `config.xml` 选择中文或英文显示
 - 使用 Open-Meteo 小时预报，不需要 API key
 - 只在更新时开启 Wi-Fi，完成后自动关闭
-- 单次更新完成后 `worker.sh` 会退出，让 Kindle 可以休眠
-- 可安装低耗电 4 小时定时更新
+- `worker.sh` 永远只做单次更新，跑完就恢复省电状态并退出
+- `schedule.sh` 负责背景 4 小时循环，并在安装后立即触发第一次更新
 
 ### 文件
 
 - `render.py` - 获取 Open-Meteo 数据、读取电池百分比，并生成 `weather.png`
 - `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
 - `start.sh` - 手动更新一次
-- `schedule.sh` - 启动内建低耗电 4 小时定时，并立即更新一次
+- `schedule.sh` - 启动或重启后台 4 小时循环，并立即更新一次
 - `unschedule.sh` - 移除定时，并恢复省电设置
 - `config.xml` - KUAL 扩展信息与天气设置
 - `menu.json` - KUAL 菜单配置
@@ -105,9 +105,10 @@ Weather Clock
   - `unschedule.sh`
   - `worker.sh`
   - `weather.png` 可选，只是首次显示前的预览图
-- `weather.tmp.png`、`log.txt` 与运行诊断文件应留在本机，不提交到 GitHub。
+- `weather.tmp.png`、`log.txt`、`schedule.pid` 与运行诊断文件应留在本机，不提交到 GitHub。
 - `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
-- `Install 4h Schedule` 会启动 `schedule.sh` 内建循环，并先立即更新一次；不需要 `crontab`。
+- `Install 4h Schedule` 会启动后台 `schedule.sh run` 循环，并先立即更新一次；不需要 `crontab`。
+- 如果 Kindle 上还留有旧版 `scheduler.sh`，可以删除；新版不需要它。
 
 ---
 
@@ -141,15 +142,15 @@ Weather Clock
 - Chinese or English display selected from `config.xml`
 - Open-Meteo hourly forecast, no API key required
 - Wi-Fi turns on only during refresh, then turns off again
-- Single-shot `worker.sh` exits after each refresh so Kindle can sleep
-- Optional cron schedule for low-power 4-hour refreshes
+- `worker.sh` always runs a single refresh, restores Kindle power-saving state, then exits
+- `schedule.sh` owns the background 4-hour loop and triggers the first refresh immediately
 
 ### Files
 
 - `render.py` - Fetches Open-Meteo data, reads battery percentage, and renders `weather.png`
 - `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
 - `start.sh` - Runs one manual refresh
-- `schedule.sh` - Starts the built-in low-power 4-hour schedule and runs one immediate refresh
+- `schedule.sh` - Starts or restarts the background 4-hour loop and runs one immediate refresh
 - `unschedule.sh` - Removes the schedule and restores low-power settings
 - `config.xml` - KUAL extension metadata and weather settings
 - `menu.json` - KUAL menu configuration
@@ -208,6 +209,7 @@ Weather Clock
   - `unschedule.sh`
   - `worker.sh`
   - `weather.png` is optional; it is only the preview image before the first refresh
-- `weather.tmp.png`, `log.txt`, and runtime diagnostics should stay local.
-- `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
-- `Install 4h Schedule` starts the built-in `schedule.sh` loop and runs one immediate refresh first; `crontab` is not required.
+- `weather.tmp.png`, `log.txt`, `schedule.pid`, and runtime diagnostics should stay local.
+- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off, restores `preventScreenSaver`, then exits.
+- `Install 4h Schedule` starts the background `schedule.sh run` loop and runs one immediate refresh first; `crontab` is not required.
+- If an older `scheduler.sh` still exists on Kindle, remove it. This release does not need it.

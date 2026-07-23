@@ -1,62 +1,58 @@
 #!/bin/sh
 
 BASE="/mnt/us/extensions/weatheriot"
-cd "$BASE"
+cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
+VERSION="worker-once-2026-07-23"
 
-echo "===================================" >> "$LOG"
-echo " PW1 Weather Single Refresh " >> "$LOG"
-echo "===================================" >> "$LOG"
-
-cleanup() {
+cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
     lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
     lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
 }
 
-trap cleanup EXIT INT TERM
+image_info() {
+    if [ -f "$IMG" ]; then
+        SIZE=$(wc -c < "$IMG" 2>/dev/null)
+        MTIME=$(ls -l "$IMG" 2>/dev/null)
+        echo "weather.png size: $SIZE bytes" >> "$LOG"
+        echo "weather.png file: $MTIME" >> "$LOG"
+    else
+        echo "weather.png status: missing" >> "$LOG"
+    fi
+}
 
-# ==================================================
-# 初始化
-# ==================================================
+trap cleanup_power EXIT INT TERM
 
-# 關前燈
+echo "===================================" >> "$LOG"
+echo " PW1 Weather Single Refresh " >> "$LOG"
+echo " version: $VERSION " >> "$LOG"
+echo "===================================" >> "$LOG"
+echo "--- 更新開始 $(date) ---" >> "$LOG"
+
+echo "更新前圖片狀態:" >> "$LOG"
+image_info
+
+# 只在本次更新期間禁止 screensaver，結束後一定恢復，避免長時間耗電。
+lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd flIntensity 0 >> "$LOG" 2>&1
-# 某些 FW 還需要這個
 lipc-set-prop com.lab126.powerd frontlight 0 >> "$LOG" 2>&1
-# 關閉 frontlight daemon
 killall ftlight >> "$LOG" 2>&1
 
-# CPU powersave
 if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
     echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>> "$LOG"
 fi
 
-# 只在本次更新期間禁止 screensaver，結束後會恢復，避免長時間耗電。
-lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
-
-# 初始關 WiFi
-lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
-
-echo "" >> "$LOG"
-echo "--- 更新開始 $(date) ---" >> "$LOG"
-
-# ==================================================
-# 開 WiFi
-# ==================================================
-
 echo "開啟 WiFi..." >> "$LOG"
-
 lipc-set-prop com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
 
-# 等待 WiFi 真正連線。省電優先，避免一次更新把 WiFi 開太久。
 COUNT=0
 WIFI_OK=0
 while [ $COUNT -lt 10 ]; do
     if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
-        echo "WiFi 已連線" >> "$LOG"
+        echo "WiFi ping 已連線" >> "$LOG"
         WIFI_OK=1
         break
     fi
@@ -67,10 +63,6 @@ done
 if [ "$WIFI_OK" -ne 1 ]; then
     echo "WiFi ping 檢查失敗，仍嘗試 HTTPS 天氣更新" >> "$LOG"
 fi
-
-# ==================================================
-# 讀設定
-# ==================================================
 
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
@@ -85,13 +77,9 @@ echo "城市: $CITY" >> "$LOG"
 echo "座標: $LAT,$LON" >> "$LOG"
 echo "語言: $LANGUAGE" >> "$LOG"
 
-# ==================================================
-# 更新圖片
-# ==================================================
-
 echo "render.py 開始時間: $(date)" >> "$LOG"
 START_TS=$(date +%s)
-timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
+timeout -t 60 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
 RET=$?
 END_TS=$(date +%s)
 echo "render.py 結束時間: $(date)" >> "$LOG"
@@ -99,26 +87,24 @@ echo "render.py 執行秒數: $((END_TS - START_TS)) 秒" >> "$LOG"
 echo "render.py return code: $RET" >> "$LOG"
 
 if [ $RET -eq 124 ]; then
+    echo "render.py timeout，清理 python3" >> "$LOG"
     killall python3 >> "$LOG" 2>&1
 fi
-
-# ==================================================
-# 關 WiFi（超重要）
-# ==================================================
 
 echo "關閉 WiFi..." >> "$LOG"
 lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
 
-# ==================================================
-# 顯示圖片
-# ==================================================
+echo "更新後圖片狀態:" >> "$LOG"
+image_info
 
-if [ -f "$IMG" ]; then
+if [ $RET -eq 0 ] && [ -f "$IMG" ]; then
     echo "更新 EINK..." >> "$LOG"
     /usr/sbin/eips -g "$IMG" >> "$LOG" 2>&1
     echo "weather.png 顯示完成" >> "$LOG"
 else
-    echo "ERROR: weather.png 不存在" >> "$LOG"
+    echo "ERROR: render.py 未成功，跳過 EINK 顯示，避免顯示舊圖" >> "$LOG"
 fi
 
+cleanup_power
+echo "--- 更新結束 $(date) ---" >> "$LOG"
 echo "單次更新完成，worker 結束，交回 Kindle 休眠" >> "$LOG"
