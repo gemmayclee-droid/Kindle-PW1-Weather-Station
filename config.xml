@@ -11,8 +11,6 @@
         <city>Shanghai</city>
         <lat>31.2304</lat>
         <lon>121.4737</lon>
-        <apikey>YOUR_API_KEY</apikey>
-        <unit>metric</unit>
         <interval>14400</interval>
     </settings>
 

@@ -16,9 +16,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TARGET_DIR = "/mnt/us/extensions/weatheriot"
 
 city = sys.argv[1] if len(sys.argv) > 1 else "Shanghai"
-apikey = sys.argv[2] if len(sys.argv) > 2 else "YOUR_API_KEY"
-lat = sys.argv[3] if len(sys.argv) > 3 else "31.2304"
-lon = sys.argv[4] if len(sys.argv) > 4 else "121.4737"
+lat = sys.argv[2] if len(sys.argv) > 2 else "31.2304"
+lon = sys.argv[3] if len(sys.argv) > 3 else "121.4737"
 
 OPEN_METEO_URL = (
     "https://api.open-meteo.com/v1/forecast"

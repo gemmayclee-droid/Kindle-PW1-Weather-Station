@@ -21,12 +21,6 @@
       "action": "./unschedule.sh",
       "exitmenu": true,
       "refresh": false
-    },
-    {
-      "name": "Environment Scan",
-      "action": "./scan.sh",
-      "exitmenu": false,
-      "refresh": false
     }
     ]
   }

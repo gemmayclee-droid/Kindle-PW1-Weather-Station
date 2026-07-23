@@ -2,13 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.0 - 2026-07-23
+
+- Removed unused OpenWeatherMap API key and unit settings from `config.xml`.
+- Removed unused API key argument handling from `worker.sh` and `render.py`.
+- Removed the committed generated `weather.png` example from the repository.
+- Removed the diagnostic scan script and KUAL menu entry.
+- Added generated weather images to `.gitignore`.
+
 ## 1.5.0 - 2026-07-23
 
 - Changed `worker.sh` from a resident infinite loop to a single-shot refresh process.
 - Added `schedule.sh` and `unschedule.sh` for low-power cron-based automatic updates.
 - Restored Kindle screensaver permission after each refresh so the device can sleep between updates.
 - Shortened Wi-Fi connection waiting and render timeout windows to reduce awake time.
-- Changed the default automatic refresh interval to 6 hours.
+- Changed the default automatic refresh interval to 4 hours.
 
 ## 1.4.0 - 2026-07-22
 

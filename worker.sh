@@ -75,7 +75,6 @@ fi
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
 LON=$(grep "<lon>" config.xml | sed 's/.*<lon>\(.*\)<\/lon>.*/\1/' | tr -d '\r' | tr -d ' ')
-APIKEY=$(grep "<apikey>" config.xml | sed 's/.*<apikey>\(.*\)<\/apikey>.*/\1/' | tr -d '\r' | tr -d ' ')
 
 echo "城市: $CITY" >> "$LOG"
 echo "座標: $LAT,$LON" >> "$LOG"
@@ -87,7 +86,7 @@ echo "座標: $LAT,$LON" >> "$LOG"
 echo "render.py 開始時間: $(date)" >> "$LOG"
 START_TS=$(date +%s)
 if [ "$WIFI_OK" -eq 1 ]; then
-    timeout -t 45 /usr/bin/python3 render.py "$CITY" "$APIKEY" "$LAT" "$LON" >> "$LOG" 2>&1
+    timeout -t 45 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" >> "$LOG" 2>&1
     RET=$?
 else
     RET=0
