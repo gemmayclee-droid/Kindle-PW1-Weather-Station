@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.8.0 - 2026-07-23
+
+- Reworked README into Chinese-first and English collapsible sections.
+- Added the generated `weather.png` sample image display to both README language sections.
+
 ## 1.7.0 - 2026-07-23
 
 - Added `<lang>` setting to `config.xml` for Chinese or English rendering.

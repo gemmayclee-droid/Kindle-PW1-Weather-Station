@@ -1,27 +1,103 @@
 # Kindle PW1 Weather Station
 
+<details open>
+<summary><strong>中文说明</strong></summary>
+
+Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐小时预报、未来 3 天预报渲染成灰阶 `weather.png`，并显示在 Kindle E Ink 屏幕上。
+
+## PNG 样例图
+
+![Kindle PW1 Weather Station sample](weather.png)
+
+## 功能
+
+- 当前天气、温度、湿度、日期、时间与电池百分比
+- 未来 8 小时逐小时显示，并显示未来 3 天天气
+- 可在 `config.xml` 选择中文或英文显示
+- 使用 Open-Meteo 小时预报，不需要 API key
+- 只在更新时开启 Wi-Fi，完成后自动关闭
+- 单次更新完成后 `worker.sh` 会退出，让 Kindle 可以休眠
+- 可安装低耗电 4 小时定时更新
+
+## 文件
+
+- `render.py` - 获取 Open-Meteo 数据、读取电池百分比，并生成 `weather.png`
+- `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
+- `start.sh` - 手动更新一次
+- `schedule.sh` - 安装低耗电 cron 定时，并立即更新一次
+- `unschedule.sh` - 移除 cron 定时，并恢复省电设置
+- `config.xml` - KUAL 扩展信息与天气设置
+- `menu.json` - KUAL 菜单配置
+- `font.ttc` - CJK/天气文字渲染字体
+- `weather.png` - 预览用生成图，Kindle 实际运行时会重新生成
+
+## 安装
+
+1. 将项目文件复制到 Kindle：
+
+   ```text
+   /mnt/us/extensions/weatheriot
+   ```
+
+2. 修改 `config.xml`：
+
+   ```xml
+   <city>Shanghai</city>
+   <lat>31.2304</lat>
+   <lon>121.4737</lon>
+   <lang>zh</lang>
+   <interval>14400</interval>
+   ```
+
+   `lang` 控制图片显示语言：
+
+   - `zh` - 中文
+   - `en` - 英文
+
+   `interval` 单位是秒，`14400` 表示 4 小时。
+
+3. 在 KUAL 打开 `Weather Clock`，选择：
+
+   - `Update Once` - 立即更新一次
+   - `Install 4h Schedule` - 立即更新并安装每 4 小时定时更新
+   - `Remove Schedule` - 停止自动更新
+
+## 需求
+
+- 已越狱 Kindle Paperwhite 1
+- KUAL
+- Kindle 上的 Python 3
+- Python packages: `requests`, `Pillow`
+- 不需要天气 API key
+
+## 注意事项
+
+- `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
+- `weather.tmp.png`、`log.txt` 与运行诊断文件应留在本机，不提交到 GitHub。
+- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
+
+</details>
+
+<details>
+<summary><strong>English</strong></summary>
+
 Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the next 8 hourly forecasts, and the next 3 days to a grayscale `weather.png`, then displays it on the Kindle E Ink screen.
 
-Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小時逐小時預報、未來 3 天預報渲染成灰階 `weather.png`，並顯示在 Kindle E Ink 螢幕上。
+## PNG Sample
 
-## Features / 功能
+![Kindle PW1 Weather Station sample](weather.png)
+
+## Features
 
 - Current weather, temperature, humidity, date, time, and battery percentage
-- 當前天氣、溫度、濕度、日期、時間與電池百分比
 - Next 8 hours with one row per hour, plus next 3 days
-- 未來 8 小時逐小時顯示，並顯示未來 3 天預報
 - Chinese or English display selected from `config.xml`
-- 可在 `config.xml` 選擇中文或英文顯示
 - Open-Meteo hourly forecast, no API key required
-- 使用 Open-Meteo 小時預報，不需要 API key
 - Wi-Fi turns on only during refresh, then turns off again
-- 只在更新時開啟 Wi-Fi，完成後自動關閉
-- Single-shot worker exits after each refresh so Kindle can sleep
-- 單次更新完成後 worker 會退出，讓 Kindle 可以休眠
+- Single-shot `worker.sh` exits after each refresh so Kindle can sleep
 - Optional cron schedule for low-power 4-hour refreshes
-- 可安裝低耗電 4 小時定時更新
 
-## Files / 檔案
+## Files
 
 - `render.py` - Fetches Open-Meteo data, reads battery percentage, and renders `weather.png`
 - `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
@@ -31,21 +107,17 @@ Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小
 - `config.xml` - KUAL extension metadata and weather settings
 - `menu.json` - KUAL menu configuration
 - `font.ttc` - Font used for CJK/weather text rendering
-- `weather.png` - Generated sample image for preview; Kindle will regenerate it at runtime
+- `weather.png` - Generated preview image; Kindle will regenerate it at runtime
 
-## Setup / 安裝
+## Setup
 
 1. Copy the project files to Kindle:
-
-   將專案檔案複製到 Kindle：
 
    ```text
    /mnt/us/extensions/weatheriot
    ```
 
 2. Edit `config.xml`:
-
-   修改 `config.xml`：
 
    ```xml
    <city>Shanghai</city>
@@ -57,24 +129,18 @@ Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小
 
    `lang` controls the rendered display language:
 
-   `lang` 控制圖片顯示語言：
-
-   - `zh` - Chinese / 中文
-   - `en` - English / 英文
+   - `zh` - Chinese
+   - `en` - English
 
    `interval` is in seconds. `14400` means 4 hours.
 
-   `interval` 單位是秒，`14400` 表示 4 小時。
-
 3. From KUAL, open `Weather Clock` and choose:
 
-   在 KUAL 開啟 `Weather Clock`，選擇：
+   - `Update Once` - refresh immediately
+   - `Install 4h Schedule` - refresh now and then every 4 hours
+   - `Remove Schedule` - stop automatic refreshes
 
-   - `Update Once` - refresh immediately / 立即更新一次
-   - `Install 4h Schedule` - refresh now and then every 4 hours / 立即更新並安裝每 4 小時定時更新
-   - `Remove Schedule` - stop automatic refreshes / 停止自動更新
-
-## Requirements / 需求
+## Requirements
 
 - Jailbroken Kindle Paperwhite 1
 - KUAL
@@ -82,11 +148,10 @@ Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小
 - Python packages: `requests`, `Pillow`
 - No weather API key is required
 
-## Notes / 注意事項
+## Notes
 
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
-- `weather.png` 是預覽用生成圖片；Kindle 實際執行時會覆寫它。
 - `weather.tmp.png`, `log.txt`, and runtime diagnostics should stay local.
-- `weather.tmp.png`、`log.txt` 與執行診斷檔應留在本機。
 - `worker.sh` does not stay resident. It turns Wi-Fi off, restores `preventScreenSaver`, updates the image, and exits after each run.
-- `worker.sh` 不會常駐；每次更新後會關 Wi-Fi、恢復 `preventScreenSaver`，然後退出。
+
+</details>
