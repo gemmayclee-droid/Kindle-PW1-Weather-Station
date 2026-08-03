@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.15.0 - 2026-08-03
+
+- Kept `preventScreenSaver` enabled after a successful refresh so `weather.png` remains visible.
+- Continued turning Wi-Fi off after each refresh to avoid unnecessary network power use.
+- Left `unschedule.sh` responsible for restoring the normal screensaver behavior when automatic updates are removed.
+
 ## 1.14.0 - 2026-07-23
 
 - Restored `worker.sh` as a single-shot refresh script so manual updates remain reliable.

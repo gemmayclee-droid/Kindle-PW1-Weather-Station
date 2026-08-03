@@ -5,12 +5,18 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-07-23"
+VERSION="worker-once-2026-08-03"
+KEEP_DISPLAY=0
 
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
     lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
-    lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
+    if [ "$KEEP_DISPLAY" -eq 1 ]; then
+        echo "保持螢幕保護關閉，避免 weather.png 被覆蓋" >> "$LOG"
+        lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
+    else
+        lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
+    fi
 }
 
 image_info() {
@@ -35,7 +41,7 @@ echo "--- 更新開始 $(date) ---" >> "$LOG"
 echo "更新前圖片狀態:" >> "$LOG"
 image_info
 
-# 只在本次更新期間禁止 screensaver，結束後一定恢復，避免長時間耗電。
+# 更新成功後會保持 screensaver 關閉，避免 weather.png 被覆蓋。
 lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd flIntensity 0 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd frontlight 0 >> "$LOG" 2>&1
@@ -99,7 +105,9 @@ image_info
 
 if [ $RET -eq 0 ] && [ -f "$IMG" ]; then
     echo "更新 EINK..." >> "$LOG"
+    lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
     /usr/sbin/eips -g "$IMG" >> "$LOG" 2>&1
+    KEEP_DISPLAY=1
     echo "weather.png 顯示完成" >> "$LOG"
 else
     echo "ERROR: render.py 未成功，跳過 EINK 顯示，避免顯示舊圖" >> "$LOG"
@@ -107,4 +115,8 @@ fi
 
 cleanup_power
 echo "--- 更新結束 $(date) ---" >> "$LOG"
-echo "單次更新完成，worker 結束，交回 Kindle 休眠" >> "$LOG"
+if [ "$KEEP_DISPLAY" -eq 1 ]; then
+    echo "單次更新完成，保持 weather.png 顯示" >> "$LOG"
+else
+    echo "單次更新失敗，worker 結束並恢復螢幕保護" >> "$LOG"
+fi

@@ -106,7 +106,7 @@ Weather Clock
   - `worker.sh`
   - `weather.png` 可选，只是首次显示前的预览图
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 与运行诊断文件应留在本机，不提交到 GitHub。
-- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi、恢复 `preventScreenSaver`，然后退出。
+- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi，并保持 `preventScreenSaver` 开启以避免天气图被屏保覆盖。
 - `Install 4h Schedule` 会启动后台 `schedule.sh run` 循环，并先立即更新一次；不需要 `crontab`。
 - 如果 Kindle 上还留有旧版 `scheduler.sh`，可以删除；新版不需要它。
 
@@ -210,6 +210,6 @@ Weather Clock
   - `worker.sh`
   - `weather.png` is optional; it is only the preview image before the first refresh
 - `weather.tmp.png`, `log.txt`, `schedule.pid`, and runtime diagnostics should stay local.
-- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off, restores `preventScreenSaver`, then exits.
+- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off and keeps `preventScreenSaver` enabled so the weather image is not covered by the screensaver.
 - `Install 4h Schedule` starts the background `schedule.sh run` loop and runs one immediate refresh first; `crontab` is not required.
 - If an older `scheduler.sh` still exists on Kindle, remove it. This release does not need it.
