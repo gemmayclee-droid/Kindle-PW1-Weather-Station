@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.16.0 - 2026-08-18
+
+- Added a Traditional Chinese README section.
+- Updated README language navigation to include Simplified Chinese, Traditional Chinese, and English.
+
 ## 1.15.0 - 2026-08-03
 
 - Kept `preventScreenSaver` enabled after a successful refresh so `weather.png` remains visible.

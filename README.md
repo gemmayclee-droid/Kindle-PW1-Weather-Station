@@ -1,7 +1,9 @@
 # Kindle PW1 Weather Station
 
 <p align="center">
-  <a href="#中文"><strong>中文</strong></a>
+  <a href="#中文"><strong>简体中文</strong></a>
+  ·
+  <a href="#繁體中文"><strong>繁體中文</strong></a>
   ·
   <a href="#english"><strong>English</strong></a>
 </p>
@@ -11,7 +13,9 @@
 ## 中文
 
 <p align="center">
-  <strong>中文</strong>
+  <strong>简体中文</strong>
+  ·
+  <a href="#繁體中文">繁體中文</a>
   ·
   <a href="#english">English</a>
 </p>
@@ -113,10 +117,119 @@ Weather Clock
 
 ---
 
+## 繁體中文
+
+<p align="center">
+  <a href="#中文">简体中文</a>
+  ·
+  <strong>繁體中文</strong>
+  ·
+  <a href="#english">English</a>
+</p>
+
+Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小時逐小時預報、未來 3 天天氣預報渲染成灰階 `weather.png`，並顯示在 Kindle E Ink 螢幕上。
+
+### PNG 範例圖
+
+![Kindle PW1 Weather Station sample](weather.png)
+![Kindle PW1 Weather Station sample](PW1.png)
+
+### KUAL 選單範例
+
+```text
+Weather Clock
+├─ Update Once
+├─ Install 4h Schedule
+└─ Remove Schedule
+```
+
+### 功能
+
+- 目前天氣、溫度、濕度、日期、時間與電池百分比
+- 未來 8 小時逐小時顯示，並顯示未來 3 天天氣
+- 可在 `config.xml` 選擇中文或英文顯示
+- 使用 Open-Meteo 小時預報，不需要 API key
+- 只在更新時開啟 Wi-Fi，完成後自動關閉
+- `worker.sh` 永遠只做單次更新，跑完就恢復省電狀態並退出
+- `schedule.sh` 負責背景 4 小時循環，並在安裝後立即觸發第一次更新
+
+### 檔案
+
+- `render.py` - 取得 Open-Meteo 資料、讀取電池百分比，並產生 `weather.png`
+- `worker.sh` - 執行一次 Wi-Fi、天氣、E Ink 更新，然後退出
+- `start.sh` - 手動更新一次
+- `schedule.sh` - 啟動或重啟背景 4 小時循環，並立即更新一次
+- `unschedule.sh` - 移除排程，並恢復省電設定
+- `config.xml` - KUAL 擴充套件資訊與天氣設定
+- `menu.json` - KUAL 選單設定
+- `font.ttc` - CJK/天氣文字渲染字型
+- `weather.png` - 預覽用產生圖，Kindle 實際執行時會重新產生
+
+### 安裝
+
+1. 將專案檔案複製到 Kindle：
+
+   ```text
+   /mnt/us/extensions/weatheriot
+   ```
+
+2. 修改 `config.xml`：
+
+   ```xml
+   <city>Shanghai</city>
+   <lat>31.2304</lat>
+   <lon>121.4737</lon>
+   <lang>zh</lang>
+   <interval>14400</interval>
+   ```
+
+   `lang` 控制圖片顯示語言：
+
+   - `zh` - 中文
+   - `en` - 英文
+
+   `interval` 單位是秒，`14400` 表示 4 小時。
+
+3. 在 KUAL 開啟 `Weather Clock`，選擇：
+
+   - `Update Once` - 立即更新一次
+   - `Install 4h Schedule` - 立即更新並安裝每 4 小時定時更新
+   - `Remove Schedule` - 停止自動更新
+
+### 需求
+
+- 已越獄 Kindle Paperwhite 1
+- KUAL
+- Kindle 上的 Python 3
+- Python packages: `requests`, `Pillow`
+- 不需要天氣 API key
+
+### 注意事項
+
+- `weather.png` 是預覽用產生圖片；Kindle 實際執行時會覆蓋它。
+- Kindle 需要下載這些檔案到 `/mnt/us/extensions/weatheriot`：
+  - `config.xml`
+  - `font.ttc`
+  - `menu.json`
+  - `render.py`
+  - `schedule.sh`
+  - `start.sh`
+  - `unschedule.sh`
+  - `worker.sh`
+  - `weather.png` 可選，只是首次顯示前的預覽圖
+- `weather.tmp.png`、`log.txt`、`schedule.pid` 與執行診斷檔案應留在本機，不提交到 GitHub。
+- `worker.sh` 不會常駐；每次更新後會關閉 Wi-Fi，並保持 `preventScreenSaver` 開啟以避免天氣圖被螢幕保護覆蓋。
+- `Install 4h Schedule` 會啟動背景 `schedule.sh run` 循環，並先立即更新一次；不需要 `crontab`。
+- 如果 Kindle 上還留有舊版 `scheduler.sh`，可以刪除；新版不需要它。
+
+---
+
 ## English
 
 <p align="center">
-  <a href="#中文">中文</a>
+  <a href="#中文">简体中文</a>
+  ·
+  <a href="#繁體中文">繁體中文</a>
   ·
   <strong>English</strong>
 </p>
