@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.17.0 - 2026-08-18
+
+- Changed the README default language section to Traditional Chinese.
+- Reordered README language navigation to show Traditional Chinese first.
+
 ## 1.16.0 - 2026-08-18
 
 - Added a Traditional Chinese README section.
