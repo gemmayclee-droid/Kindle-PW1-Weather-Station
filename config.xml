@@ -13,6 +13,8 @@
         <lon>121.4737</lon>
         <lang>zh</lang>
         <interval>14400</interval>
+        <sleepStart>22</sleepStart>
+        <sleepEnd>7</sleepEnd>
     </settings>
 
     <menus>
