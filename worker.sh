@@ -5,8 +5,46 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-08-03"
+VERSION="worker-once-2026-08-20"
 KEEP_DISPLAY=0
+
+read_hour_setting() {
+    TAG="$1"
+    DEFAULT="$2"
+    VALUE=$(grep "<$TAG>" config.xml | sed "s/.*<$TAG>\(.*\)<\/$TAG>.*/\1/" | tr -d '\r' | tr -d ' ')
+
+    case "$VALUE" in
+        *[!0-9]*|"")
+            VALUE="$DEFAULT"
+            ;;
+    esac
+
+    if [ "$VALUE" -lt 0 ] || [ "$VALUE" -gt 23 ]; then
+        VALUE="$DEFAULT"
+    fi
+
+    echo "$VALUE"
+}
+
+is_sleep_window() {
+    HOUR=$(date +%H | sed 's/^0//')
+    if [ -z "$HOUR" ]; then
+        HOUR=0
+    fi
+
+    SLEEP_START=$(read_hour_setting sleepStart 22)
+    SLEEP_END=$(read_hour_setting sleepEnd 7)
+
+    if [ "$SLEEP_START" -eq "$SLEEP_END" ]; then
+        return 1
+    fi
+
+    if [ "$SLEEP_START" -lt "$SLEEP_END" ]; then
+        [ "$HOUR" -ge "$SLEEP_START" ] && [ "$HOUR" -lt "$SLEEP_END" ]
+    else
+        [ "$HOUR" -ge "$SLEEP_START" ] || [ "$HOUR" -lt "$SLEEP_END" ]
+    fi
+}
 
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
@@ -15,6 +53,7 @@ cleanup_power() {
         echo "保持螢幕保護關閉，避免 weather.png 被覆蓋" >> "$LOG"
         lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
     else
+        echo "允許螢幕保護與休眠以節省電力" >> "$LOG"
         lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
     fi
 }
@@ -41,7 +80,7 @@ echo "--- 更新開始 $(date) ---" >> "$LOG"
 echo "更新前圖片狀態:" >> "$LOG"
 image_info
 
-# 更新成功後會保持 screensaver 關閉，避免 weather.png 被覆蓋。
+# 更新期間暫時禁止 screensaver；成功後白天保持顯示，夜間恢復休眠。
 lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd flIntensity 0 >> "$LOG" 2>&1
 lipc-set-prop com.lab126.powerd frontlight 0 >> "$LOG" 2>&1
@@ -107,7 +146,13 @@ if [ $RET -eq 0 ] && [ -f "$IMG" ]; then
     echo "更新 EINK..." >> "$LOG"
     lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
     /usr/sbin/eips -g "$IMG" >> "$LOG" 2>&1
-    KEEP_DISPLAY=1
+    if is_sleep_window; then
+        KEEP_DISPLAY=0
+        echo "夜間省電時段，顯示後允許 Kindle 休眠" >> "$LOG"
+    else
+        KEEP_DISPLAY=1
+        echo "日間顯示時段，保持 weather.png 顯示" >> "$LOG"
+    fi
     echo "weather.png 顯示完成" >> "$LOG"
 else
     echo "ERROR: render.py 未成功，跳過 EINK 顯示，避免顯示舊圖" >> "$LOG"
@@ -118,5 +163,5 @@ echo "--- 更新結束 $(date) ---" >> "$LOG"
 if [ "$KEEP_DISPLAY" -eq 1 ]; then
     echo "單次更新完成，保持 weather.png 顯示" >> "$LOG"
 else
-    echo "單次更新失敗，worker 結束並恢復螢幕保護" >> "$LOG"
+    echo "單次更新完成或進入夜間省電，允許 Kindle 休眠" >> "$LOG"
 fi
