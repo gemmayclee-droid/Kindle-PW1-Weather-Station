@@ -43,6 +43,9 @@ Weather Clock
 - 可在 `config.xml` 選擇中文或英文顯示
 - 使用 Open-Meteo 小時預報，不需要 API key
 - 只在更新時開啟 Wi-Fi，完成後自動關閉
+- 夜間省電時段預設為 22:00-07:00，可在 `config.xml` 調整
+- 夜間更新完成後會恢復螢幕保護與休眠，避免整晚阻止 Kindle 睡眠
+- `schedule.sh` 在夜間省電時段會跳過排程更新，不開 Wi-Fi、不執行 `render.py`
 - `worker.sh` 永遠只做單次更新，跑完就恢復省電狀態並退出
 - `schedule.sh` 負責背景 4 小時循環，並在安裝後立即觸發第一次更新
 
@@ -74,6 +77,8 @@ Weather Clock
    <lon>121.4737</lon>
    <lang>zh</lang>
    <interval>14400</interval>
+   <sleepStart>22</sleepStart>
+   <sleepEnd>7</sleepEnd>
    ```
 
    `lang` 控制圖片顯示語言：
@@ -82,6 +87,8 @@ Weather Clock
    - `en` - 英文
 
    `interval` 單位是秒，`14400` 表示 4 小時。
+
+   `sleepStart` 與 `sleepEnd` 控制夜間省電時段，預設 `22` 到 `7` 表示 22:00-07:00。
 
 3. 在 KUAL 開啟 `Weather Clock`，選擇：
 
@@ -111,8 +118,9 @@ Weather Clock
   - `worker.sh`
   - `weather.png` 可選，只是首次顯示前的預覽圖
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 與執行診斷檔案應留在本機，不提交到 GitHub。
-- `worker.sh` 不會常駐；每次更新後會關閉 Wi-Fi，並保持 `preventScreenSaver` 開啟以避免天氣圖被螢幕保護覆蓋。
+- `worker.sh` 不會常駐；每次更新後會關閉 Wi-Fi。白天會保持 `preventScreenSaver` 開啟以避免天氣圖被螢幕保護覆蓋，夜間省電時段則會恢復螢幕保護與休眠。
 - `Install 4h Schedule` 會啟動背景 `schedule.sh run` 循環，並先立即更新一次；不需要 `crontab`。
+- 夜間省電時段內，排程器會每 30 分鐘檢查一次時間，但會跳過天氣更新、Wi-Fi 與圖片渲染。
 - 如果 Kindle 上還留有舊版 `scheduler.sh`，可以刪除；新版不需要它。
 
 ---
@@ -150,6 +158,9 @@ Weather Clock
 - 可在 `config.xml` 选择中文或英文显示
 - 使用 Open-Meteo 小时预报，不需要 API key
 - 只在更新时开启 Wi-Fi，完成后自动关闭
+- 夜间省电时段默认是 22:00-07:00，可在 `config.xml` 调整
+- 夜间更新完成后会恢复屏保与休眠，避免整晚阻止 Kindle 睡眠
+- `schedule.sh` 在夜间省电时段会跳过排程更新，不开 Wi-Fi、不执行 `render.py`
 - `worker.sh` 永远只做单次更新，跑完就恢复省电状态并退出
 - `schedule.sh` 负责背景 4 小时循环，并在安装后立即触发第一次更新
 
@@ -181,6 +192,8 @@ Weather Clock
    <lon>121.4737</lon>
    <lang>zh</lang>
    <interval>14400</interval>
+   <sleepStart>22</sleepStart>
+   <sleepEnd>7</sleepEnd>
    ```
 
    `lang` 控制图片显示语言：
@@ -189,6 +202,8 @@ Weather Clock
    - `en` - 英文
 
    `interval` 单位是秒，`14400` 表示 4 小时。
+
+   `sleepStart` 与 `sleepEnd` 控制夜间省电时段，默认 `22` 到 `7` 表示 22:00-07:00。
 
 3. 在 KUAL 打开 `Weather Clock`，选择：
 
@@ -218,8 +233,9 @@ Weather Clock
   - `worker.sh`
   - `weather.png` 可选，只是首次显示前的预览图
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 与运行诊断文件应留在本机，不提交到 GitHub。
-- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi，并保持 `preventScreenSaver` 开启以避免天气图被屏保覆盖。
+- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi。白天会保持 `preventScreenSaver` 开启以避免天气图被屏保覆盖，夜间省电时段则会恢复屏保与休眠。
 - `Install 4h Schedule` 会启动后台 `schedule.sh run` 循环，并先立即更新一次；不需要 `crontab`。
+- 夜间省电时段内，排程器会每 30 分钟检查一次时间，但会跳过天气更新、Wi-Fi 与图片渲染。
 - 如果 Kindle 上还留有旧版 `scheduler.sh`，可以删除；新版不需要它。
 
 ---
@@ -257,6 +273,9 @@ Weather Clock
 - Chinese or English display selected from `config.xml`
 - Open-Meteo hourly forecast, no API key required
 - Wi-Fi turns on only during refresh, then turns off again
+- The night power-save window defaults to 22:00-07:00 and can be changed in `config.xml`
+- After a successful night refresh, Kindle screensaver and sleep are restored to avoid blocking sleep overnight
+- `schedule.sh` skips scheduled updates during the night power-save window without opening Wi-Fi or running `render.py`
 - `worker.sh` always runs a single refresh, restores Kindle power-saving state, then exits
 - `schedule.sh` owns the background 4-hour loop and triggers the first refresh immediately
 
@@ -288,6 +307,8 @@ Weather Clock
    <lon>121.4737</lon>
    <lang>zh</lang>
    <interval>14400</interval>
+   <sleepStart>22</sleepStart>
+   <sleepEnd>7</sleepEnd>
    ```
 
    `lang` controls the rendered display language:
@@ -296,6 +317,8 @@ Weather Clock
    - `en` - English
 
    `interval` is in seconds. `14400` means 4 hours.
+
+   `sleepStart` and `sleepEnd` control the night power-save window. The default `22` to `7` means 22:00-07:00.
 
 3. From KUAL, open `Weather Clock` and choose:
 
@@ -325,6 +348,7 @@ Weather Clock
   - `worker.sh`
   - `weather.png` is optional; it is only the preview image before the first refresh
 - `weather.tmp.png`, `log.txt`, `schedule.pid`, and runtime diagnostics should stay local.
-- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off and keeps `preventScreenSaver` enabled so the weather image is not covered by the screensaver.
+- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off. During the daytime it keeps `preventScreenSaver` enabled so the weather image is not covered by the screensaver; during the night power-save window it restores screensaver and sleep.
 - `Install 4h Schedule` starts the background `schedule.sh run` loop and runs one immediate refresh first; `crontab` is not required.
+- During the night power-save window, the scheduler checks the time every 30 minutes but skips weather updates, Wi-Fi, and image rendering.
 - If an older `scheduler.sh` still exists on Kindle, remove it. This release does not need it.
