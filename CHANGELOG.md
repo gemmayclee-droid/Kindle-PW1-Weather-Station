@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.18.0 - 2026-08-20
+
+- Added a configurable night power-save window with default hours from 22:00 to 07:00.
+- Restored Kindle screensaver and sleep permission after successful night refreshes to reduce overnight battery drain.
+- Changed the 4-hour scheduler to skip weather updates during the night sleep window, avoiding unnecessary Wi-Fi and render work.
+
 ## 1.17.0 - 2026-08-18
 
 - Changed the README default language section to Traditional Chinese.
