@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.19.0 - 2026-08-31
+
+- Removed the night sleep window because Kindle system sleep freezes the background scheduler and prevents later weather refreshes.
+- Automatic updates now keep the Kindle awake so the 4-hour scheduler can reliably run; Wi-Fi and the frontlight still turn off after each refresh.
+- Updated the documentation to explain this Kindle power-management limitation.
+
 ## 1.18.0 - 2026-08-20
 
 - Added a configurable night power-save window with default hours from 22:00 to 07:00.
