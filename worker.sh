@@ -5,8 +5,14 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-08-31"
+VERSION="worker-once-2026-09-01"
 KEEP_DISPLAY=0
+SCHEDULED=0
+
+if [ "$1" = "--scheduled" ]; then
+    SCHEDULED=1
+    KEEP_DISPLAY=1
+fi
 
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
@@ -113,6 +119,9 @@ if [ $RET -eq 0 ] && [ -f "$IMG" ]; then
     echo "weather.png 顯示完成" >> "$LOG"
 else
     echo "ERROR: render.py 未成功，跳過 EINK 顯示，避免顯示舊圖" >> "$LOG"
+    if [ "$SCHEDULED" -eq 1 ]; then
+        echo "自動排程模式：保留現有 weather.png 並維持螢幕保護關閉" >> "$LOG"
+    fi
 fi
 
 cleanup_power
@@ -120,5 +129,5 @@ echo "--- 更新結束 $(date) ---" >> "$LOG"
 if [ "$KEEP_DISPLAY" -eq 1 ]; then
     echo "單次更新完成，保持 weather.png 顯示" >> "$LOG"
 else
-    echo "單次更新未成功，允許 Kindle 休眠" >> "$LOG"
+    echo "手動單次更新未成功，允許 Kindle 休眠" >> "$LOG"
 fi
