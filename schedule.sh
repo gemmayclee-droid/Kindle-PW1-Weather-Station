@@ -54,7 +54,9 @@ if [ "$1" = "run" ]; then
     while true; do
         read_interval
         echo "=== schedule 觸發更新: $(date) ===" >> "$LOG"
-        /bin/sh "$BASE/worker.sh" >> "$LOG" 2>&1
+        /bin/sh "$BASE/worker.sh" --scheduled >> "$LOG" 2>&1
+        # 即使本輪天氣下載失敗，也不能讓螢幕保護中斷下一輪排程。
+        lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
         read_interval
         echo "保持 weather.png，$INTERVAL 秒後更新..." >> "$LOG"
         sleep "$INTERVAL"
