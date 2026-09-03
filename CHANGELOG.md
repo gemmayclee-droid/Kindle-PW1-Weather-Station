@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.20.0 - 2026-09-03
+
+- Replaced the rolling 4-hour schedule with fixed weekday refreshes at 08:00, 12:00, 16:00, and 20:00.
+- After 20:00, the scheduler waits until 08:00 on the next weekday; Friday evening waits until Monday morning.
+- Removed the unused configurable interval setting.
+
 ## 1.19.0 - 2026-08-31
 
 - Removed the night sleep window because Kindle system sleep freezes the background scheduler and prevents later weather refreshes.
