@@ -10,7 +10,7 @@ fi
 
 # load utils
 if [ -e "utils.sh" ]; then
-	sourc  /mnt/us/extensions/onlinescreensaver/bin/utils.sh
+	source /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
 	echo "Could not find utils.sh in `pwd`"
 	exit
