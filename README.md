@@ -47,6 +47,12 @@ Weather Clock
 - `worker.sh` 永遠只做單次更新，跑完就恢復省電狀態並退出
 - `schedule.sh` 在週一至週五的 08:00、12:00、16:00、20:00 自動更新
 
+### 更新模式
+
+- `weatheriot` 模式：在 Kindle 本機執行 `weatheriot/worker.sh`，產生 `weather.png` 後顯示；不需要圖片伺服器。
+- Online Screensaver 模式：由 `onlinescreensaver/bin/config.sh` 的 `IMAGE_URI` 從 URL 下載 PNG，並交由 `linkss` 顯示。
+- 兩者可擇一使用；`IMAGE_URI=""` 時會自動使用本機 `weatheriot` 模式。
+
 ### 檔案
 
 - `weatheriot/` - Kindle 擴充套件檔案，包含腳本、設定、字型與預覽圖片
@@ -135,6 +141,12 @@ Weather Clock
 - `worker.sh` 永远只做单次更新，跑完就恢复省电状态并退出
 - `schedule.sh` 在周一至周五的 08:00、12:00、16:00、20:00 自动更新
 
+### 更新模式
+
+- `weatheriot` 模式：在 Kindle 本机执行 `weatheriot/worker.sh`，生成 `weather.png` 后显示；不需要图片服务器。
+- Online Screensaver 模式：由 `onlinescreensaver/bin/config.sh` 的 `IMAGE_URI` 从 URL 下载 PNG，并交由 `linkss` 显示。
+- 两者可择一使用；`IMAGE_URI=""` 时会自动使用本机 `weatheriot` 模式。
+
 ### 文件
 
 - `weatheriot/` - Kindle 扩展文件，包含脚本、配置、字体与预览图片
@@ -222,6 +234,12 @@ Weather Clock
 - Automatic updates keep Kindle awake so the background scheduler can run every cycle reliably
 - `worker.sh` always runs a single refresh, restores Kindle power-saving state, then exits
 - `schedule.sh` refreshes automatically at 08:00, 12:00, 16:00, and 20:00, Monday through Friday
+
+### Update modes
+
+- `weatheriot` mode: runs `weatheriot/worker.sh` on the Kindle, generates `weather.png`, and displays it locally; no image server is required.
+- Online Screensaver mode: downloads a PNG URL configured as `IMAGE_URI` in `onlinescreensaver/bin/config.sh`, then displays it through `linkss`.
+- Choose either mode; when `IMAGE_URI=""`, the local `weatheriot` mode is selected automatically.
 
 ### Files
 
