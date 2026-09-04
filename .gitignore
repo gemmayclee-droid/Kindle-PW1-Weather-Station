@@ -15,6 +15,7 @@ ENV/
 htmlcov/
 
 .DS_Store
+.codex/
 log.txt
 schedule.pid
 

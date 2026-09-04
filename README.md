@@ -24,8 +24,8 @@ Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小
 
 ### PNG 範例圖
 
-![Kindle PW1 Weather Station sample](weather.png)
-![Kindle PW1 Weather Station sample](PW1.png)
+![Kindle PW1 Weather Station sample](weatheriot/weather.png)
+![Kindle PW1 Weather Station sample](weatheriot/PW1.png)
 
 ### KUAL 選單範例
 
@@ -49,25 +49,17 @@ Weather Clock
 
 ### 檔案
 
-- `render.py` - 取得 Open-Meteo 資料、讀取電池百分比，並產生 `weather.png`
-- `worker.sh` - 執行一次 Wi-Fi、天氣、E Ink 更新，然後退出
-- `start.sh` - 手動更新一次
-- `schedule.sh` - 啟動或重啟工作日固定時段背景排程
-- `unschedule.sh` - 移除排程，並恢復省電設定
-- `config.xml` - KUAL 擴充套件資訊與天氣設定
-- `menu.json` - KUAL 選單設定
-- `font.ttc` - CJK/天氣文字渲染字型
-- `weather.png` - 預覽用產生圖，Kindle 實際執行時會重新產生
+- `weatheriot/` - Kindle 擴充套件檔案，包含腳本、設定、字型與預覽圖片
 
 ### 安裝
 
-1. 將專案檔案複製到 Kindle：
+1. 將 `weatheriot/` 目錄內的檔案複製到 Kindle：
 
    ```text
    /mnt/us/extensions/weatheriot
    ```
 
-2. 修改 `config.xml`：
+2. 修改 `weatheriot/config.xml`：
 
    ```xml
    <city>Shanghai</city>
@@ -98,16 +90,7 @@ Weather Clock
 ### 注意事項
 
 - `weather.png` 是預覽用產生圖片；Kindle 實際執行時會覆蓋它。
-- Kindle 需要下載這些檔案到 `/mnt/us/extensions/weatheriot`：
-  - `config.xml`
-  - `font.ttc`
-  - `menu.json`
-  - `render.py`
-  - `schedule.sh`
-  - `start.sh`
-  - `unschedule.sh`
-  - `worker.sh`
-  - `weather.png` 可選，只是首次顯示前的預覽圖
+- 將 `weatheriot/` 目錄內的檔案下載到 Kindle 的 `/mnt/us/extensions/weatheriot`；`weather.png` 可選，只是首次顯示前的預覽圖。
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 與執行診斷檔案應留在本機，不提交到 GitHub。
 - `worker.sh` 不會常駐；每次更新後會關閉 Wi-Fi。自動排程運作時會保持 `preventScreenSaver` 開啟，因為 Kindle 進入系統休眠會凍結背景排程，無法自行喚醒來執行下一次更新。
 - `Install 4h Schedule` 會啟動背景 `schedule.sh run` 循環，並在下一個工作日時段更新；20:00 後會等到下一個工作日 08:00，週五晚間則等到週一 08:00。不需要 `crontab`。
@@ -129,8 +112,8 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 
 ### PNG 样例图
 
-![Kindle PW1 Weather Station sample](weather.png)
-![Kindle PW1 Weather Station sample](PW1.png)
+![Kindle PW1 Weather Station sample](weatheriot/weather.png)
+![Kindle PW1 Weather Station sample](weatheriot/PW1.png)
 
 ### KUAL 菜单样例
 
@@ -154,25 +137,17 @@ Weather Clock
 
 ### 文件
 
-- `render.py` - 获取 Open-Meteo 数据、读取电池百分比，并生成 `weather.png`
-- `worker.sh` - 执行一次 Wi-Fi、天气、E Ink 更新，然后退出
-- `start.sh` - 手动更新一次
-- `schedule.sh` - 启动或重启工作日固定时段后台排程
-- `unschedule.sh` - 移除定时，并恢复省电设置
-- `config.xml` - KUAL 扩展信息与天气设置
-- `menu.json` - KUAL 菜单配置
-- `font.ttc` - CJK/天气文字渲染字体
-- `weather.png` - 预览用生成图，Kindle 实际运行时会重新生成
+- `weatheriot/` - Kindle 扩展文件，包含脚本、配置、字体与预览图片
 
 ### 安装
 
-1. 将项目文件复制到 Kindle：
+1. 将 `weatheriot/` 目录内的文件复制到 Kindle：
 
    ```text
    /mnt/us/extensions/weatheriot
    ```
 
-2. 修改 `config.xml`：
+2. 修改 `weatheriot/config.xml`：
 
    ```xml
    <city>Shanghai</city>
@@ -203,16 +178,7 @@ Weather Clock
 ### 注意事项
 
 - `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
-- Kindle 需要下载这些文件到 `/mnt/us/extensions/weatheriot`：
-  - `config.xml`
-  - `font.ttc`
-  - `menu.json`
-  - `render.py`
-  - `schedule.sh`
-  - `start.sh`
-  - `unschedule.sh`
-  - `worker.sh`
-  - `weather.png` 可选，只是首次显示前的预览图
+- 将 `weatheriot/` 目录内的文件下载到 Kindle 的 `/mnt/us/extensions/weatheriot`；`weather.png` 可选，只是首次显示前的预览图。
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 与运行诊断文件应留在本机，不提交到 GitHub。
 - `worker.sh` 不会常驻；每次更新后会关 Wi-Fi。自动排程运行时会保持 `preventScreenSaver` 开启，因为 Kindle 进入系统休眠会冻结后台排程，无法自行唤醒来执行下一次更新。
 - `Install 4h Schedule` 会启动后台 `schedule.sh run` 循环，并在下一个工作日时段更新；20:00 后会等到下一个工作日 08:00，周五晚间则等到周一 08:00。不需要 `crontab`。
@@ -234,8 +200,8 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 
 ### PNG Sample
 
-![Kindle PW1 Weather Station sample](weather.png)
-![Kindle PW1 Weather Station sample](PW1.png)
+![Kindle PW1 Weather Station sample](weatheriot/weather.png)
+![Kindle PW1 Weather Station sample](weatheriot/PW1.png)
 
 ### KUAL Menu Sample
 
@@ -259,25 +225,17 @@ Weather Clock
 
 ### Files
 
-- `render.py` - Fetches Open-Meteo data, reads battery percentage, and renders `weather.png`
-- `worker.sh` - Runs one Wi-Fi/weather/E Ink refresh, then exits
-- `start.sh` - Runs one manual refresh
-- `schedule.sh` - Starts or restarts the fixed weekday background schedule
-- `unschedule.sh` - Removes the schedule and restores low-power settings
-- `config.xml` - KUAL extension metadata and weather settings
-- `menu.json` - KUAL menu configuration
-- `font.ttc` - Font used for CJK/weather text rendering
-- `weather.png` - Generated preview image; Kindle will regenerate it at runtime
+- `weatheriot/` - Kindle extension files, including scripts, configuration, font, and preview images
 
 ### Setup
 
-1. Copy the project files to Kindle:
+1. Copy the files inside `weatheriot/` to Kindle:
 
    ```text
    /mnt/us/extensions/weatheriot
    ```
 
-2. Edit `config.xml`:
+2. Edit `weatheriot/config.xml`:
 
    ```xml
    <city>Shanghai</city>
@@ -308,16 +266,7 @@ Weather Clock
 ### Notes
 
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
-- Download these files to `/mnt/us/extensions/weatheriot` on Kindle:
-  - `config.xml`
-  - `font.ttc`
-  - `menu.json`
-  - `render.py`
-  - `schedule.sh`
-  - `start.sh`
-  - `unschedule.sh`
-  - `worker.sh`
-  - `weather.png` is optional; it is only the preview image before the first refresh
+- Download the files inside `weatheriot/` to `/mnt/us/extensions/weatheriot` on Kindle; `weather.png` is optional and only provides a preview before the first refresh.
 - `weather.tmp.png`, `log.txt`, `schedule.pid`, and runtime diagnostics should stay local.
 - `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off. While automatic updates are active it keeps `preventScreenSaver` enabled, because Kindle system sleep freezes the background scheduler and it cannot wake itself for the next refresh.
 - `Install 4h Schedule` starts the background `schedule.sh run` loop and refreshes at the next weekday slot. After 20:00 it waits until 08:00 on the next weekday; Friday evening waits until Monday 08:00. `crontab` is not required.
