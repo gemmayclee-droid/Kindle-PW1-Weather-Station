@@ -38,7 +38,7 @@ IMAGE_URI=""
 
 # Optional local renderer. When IMAGE_URI is empty, update.sh runs this
 # script and copies its generated weather.png into the linkss screensaver.
-LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker.sh
+LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker-online.sh
 LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
 
 # folder that holds the screensavers
