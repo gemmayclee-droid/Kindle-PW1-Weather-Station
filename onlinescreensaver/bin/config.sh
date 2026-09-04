@@ -50,12 +50,15 @@ SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/
 SCREENSAVERFILE=$SCREENSAVERFOLDER/bg_medium_ss00.png
 
 # Whether to create log output (1) or not (0).
-LOGGING=0
+LOGGING=1
 
-# Where to log to - either /dev/stderr for console output, or an absolute
-# file path (beware that this may grow large over time!)
-LOGFILE=/dev/stderr
-#LOGFILE=/tmp/onlinescreensaver.log
+# Persistent diagnostic log. The previous log is kept as .1 when this file
+# reaches 256 KiB.
+LOGFILE=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
+
+# Enable shell xtrace in the diagnostic log. Trace entries include the script
+# path and source line number to help pinpoint a failing command.
+DEBUG=1
 
 # whether to disable WiFi after the script has finished (if WiFi was off
 # when the script started, it will always turn it off)

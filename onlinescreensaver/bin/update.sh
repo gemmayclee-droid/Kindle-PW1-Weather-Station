@@ -22,6 +22,8 @@ else
 	exit
 fi
 
+setup_debug_log
+
 # Local weatheriot mode: render weather.png on the Kindle, then use it as
 # the linkss screensaver image. This avoids requiring an HTTP image server.
 if [ -z "$IMAGE_URI" ]; then

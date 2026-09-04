@@ -89,6 +89,15 @@ to update the screensaver right away (one time), and you can also enable or
 disable the auto-download.
 
 
+Diagnostics
+-----------
+
+The extension writes execution and shell trace output to
+`/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log`. Trace entries
+include the script path and line number. When the log reaches 256 KiB, the
+previous log is retained as `onlinescreensaver.log.1`.
+
+
 Uninstalling
 ------------
 

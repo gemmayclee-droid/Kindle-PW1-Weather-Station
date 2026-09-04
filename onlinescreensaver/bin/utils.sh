@@ -11,10 +11,27 @@ logger () {
 
 	# if no logfile is specified, set a default
 	if [ -z $LOGFILE ]; then
-		$LOGFILE=stdout
+		LOGFILE=/dev/stdout
 	fi
 
 	echo `date`: $MSG >> $LOGFILE
+}
+
+setup_debug_log () {
+	if [ -z "$LOGFILE" ]; then
+		return
+	fi
+
+	if [ -f "$LOGFILE" ] && [ "$(wc -c < "$LOGFILE")" -ge 262144 ]; then
+		mv "$LOGFILE" "$LOGFILE.1"
+	fi
+
+	exec >> "$LOGFILE" 2>&1
+	if [ "x$DEBUG" = "x1" ]; then
+		PS4='+${0}:${LINENO}: '
+		set -x
+	fi
+	logger "=== Online Screensaver started: $0 ==="
 }
 
 

@@ -16,6 +16,8 @@ else
 	exit
 fi
 
+setup_debug_log
+
 # forever and ever, try to update the screensaver
 logger "Disabling online screensaver auto-update"
 

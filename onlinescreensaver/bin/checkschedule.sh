@@ -22,6 +22,8 @@ else
 	exit
 fi
 
+setup_debug_log
+
 # get minute of day
 CURRENTMINUTE=$(( `date +%-H`*60 + `date +%-M` ))
 

@@ -16,6 +16,8 @@ else
 	exit
 fi
 
+setup_debug_log
+
 if [ -e /etc/upstart ]; then
 	logger "Enabling online screensaver auto-update"
 
