@@ -36,6 +36,11 @@ SCHEDULE="00:00-06:00=480 06:00-22:00=15 22:00-24:00=30"
 #IMAGE_URI="http://enter.the.domain/here/and/the/path/to/the/image.png"
 IMAGE_URI=""
 
+# Optional local renderer. When IMAGE_URI is empty, update.sh runs this
+# script and copies its generated weather.png into the linkss screensaver.
+LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker.sh
+LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
+
 # folder that holds the screensavers
 SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/
 

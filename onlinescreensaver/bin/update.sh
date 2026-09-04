@@ -22,10 +22,27 @@ else
 	exit
 fi
 
-# do nothing if no URL is set
-if [ -z $IMAGE_URI ]; then
-	logger "No image URL has been set. Please edit config.sh."
-	return
+# Local weatheriot mode: render weather.png on the Kindle, then use it as
+# the linkss screensaver image. This avoids requiring an HTTP image server.
+if [ -z "$IMAGE_URI" ]; then
+	if [ -x "$LOCAL_WEATHER_SCRIPT" ] && [ -f "$LOCAL_WEATHER_IMAGE" -o -d "$(dirname "$LOCAL_WEATHER_IMAGE")" ]; then
+		logger "IMAGE_URI is empty, running local weatheriot renderer"
+		/bin/sh "$LOCAL_WEATHER_SCRIPT"
+		LOCAL_RET=$?
+		if [ "$LOCAL_RET" -eq 0 ] && [ -s "$LOCAL_WEATHER_IMAGE" ]; then
+			cp "$LOCAL_WEATHER_IMAGE" "$TMPFILE" && mv "$TMPFILE" "$SCREENSAVERFILE"
+			logger "Local weatheriot screensaver image updated"
+			lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
+				logger "Updating image on screen"
+				eips -f -g "$SCREENSAVERFILE"
+			)
+		else
+			logger "Local weatheriot renderer failed (exit $LOCAL_RET)"
+		fi
+	else
+		logger "No IMAGE_URI and local weatheriot renderer not found"
+	fi
+	exit 0
 fi
 
 # enable wireless if it is currently off
