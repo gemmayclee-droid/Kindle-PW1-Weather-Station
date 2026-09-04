@@ -31,6 +31,7 @@ setup_debug_log () {
 		PS4='+${0}:${LINENO}: '
 		set -x
 	fi
+	trap 'RESULT=$?; logger "=== Online Screensaver exited: $0 (status $RESULT) ==="' 0
 	logger "=== Online Screensaver started: $0 ==="
 }
 

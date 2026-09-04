@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
+echo "$(date): bootstrap $0" >> "$BOOT_LOG" 2>&1
 ##############################################################################
 #
 # Fetch weather screensaver from a configurable URL.
@@ -9,14 +11,14 @@ cd "$(dirname "$0")"
 
 # load configuration
 if [ -e "config.sh" ]; then
-	source /mnt/us/extensions/onlinescreensaver/bin/config.sh
+	. /mnt/us/extensions/onlinescreensaver/bin/config.sh
 else
 	TMPFILE=/tmp/tmp.onlinescreensaver.png
 fi
 
 # load utils
 if [ -e "utils.sh" ]; then
-	source /mnt/us/extensions/onlinescreensaver/bin/utils.sh
+	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
 	echo "Could not find utils.sh in `pwd`"
 	exit

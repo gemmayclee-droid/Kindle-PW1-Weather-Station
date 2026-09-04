@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
+echo "$(date): bootstrap $0" >> "$BOOT_LOG" 2>&1
 ##############################################################################
 #
 # Checks the format of the schedule configuration value
@@ -11,12 +13,12 @@ cd "$(dirname "$0")"
 
 # load configuration
 if [ -e "config.sh" ]; then
-	source /mnt/us/extensions/onlinescreensaver/bin/config.sh
+	. /mnt/us/extensions/onlinescreensaver/bin/config.sh
 fi
 
 # load utils
 if [ -e "utils.sh" ]; then
-	source /mnt/us/extensions/onlinescreensaver/bin/utils.sh
+	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
 	echo "Could not find utils.sh in `pwd`"
 	exit
