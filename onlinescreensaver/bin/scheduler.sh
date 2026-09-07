@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
-echo "$(date): bootstrap $0" >> "$BOOT_LOG" 2>&1
+echo "$(date): 啟動前置記錄 $0" >> "$BOOT_LOG" 2>&1
 ##############################################################################
 #
 # Fetch weather screensaver from a configurable URL at configurable intervals.
@@ -30,7 +30,7 @@ fi
 if [ -e "utils.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
-	echo "Could not find utils.sh in `pwd`"
+	echo "在 `pwd` 找不到 utils.sh"
 	exit
 fi
 
@@ -76,7 +76,7 @@ EOF
 	
 	# to handle the day overlap, append the schedule again for hours 24-48.
 	SCHEDULE="$SCHEDULE_ONE $SCHEDULE_TWO"
-	logger "Full two day schedule: $SCHEDULE"
+	logger "完整兩日排程：$SCHEDULE"
 }
 
 
@@ -99,18 +99,18 @@ EOF
 
 		# if this schedule entry covers the current time, use it
 		elif [ $CURRENTMINUTE -ge $START ] && [ $CURRENTMINUTE -lt $END ]; then
-			logger "Schedule $schedule used, next update in $INTERVAL minutes"
+			logger "套用排程 $schedule，下一次更新在 $INTERVAL 分鐘後"
 			NEXTUPDATE=$(( $CURRENTMINUTE + $INTERVAL))
 
 		# if the next update falls into (or overlaps) a following schedule
 		# entry, apply this schedule entry instead if it would trigger earlier
 		elif [ $(( $START + $INTERVAL )) -lt $NEXTUPDATE ]; then
-			logger "Selected timeout will overlap $schedule, applying it instead"
+			logger "原定等待時間會與 $schedule 重疊，改套用此排程"
 			NEXTUPDATE=$(( $START + $INTERVAL ))
 		fi
 	done
 
-	logger "Next update in $(( $NEXTUPDATE - $CURRENTMINUTE )) minutes"
+	logger "下一次更新在 $(( $NEXTUPDATE - $CURRENTMINUTE )) 分鐘後"
 	echo $(( $NEXTUPDATE - $CURRENTMINUTE ))
 }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
-echo "$(date): bootstrap $0" >> "$BOOT_LOG" 2>&1
+echo "$(date): 啟動前置記錄 $0" >> "$BOOT_LOG" 2>&1
 
 # change to directory of this script
 cd "$(dirname "$0")"
@@ -15,14 +15,14 @@ fi
 if [ -e "utils.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
-	echo "Could not find utils.sh in `pwd`"
+	echo "在 `pwd` 找不到 utils.sh"
 	exit
 fi
 
 setup_debug_log
 
 # forever and ever, try to update the screensaver
-logger "Disabling online screensaver auto-update"
+logger "正在停用 Online Screensaver 自動更新"
 
 stop onlinescreensaver || true      
 

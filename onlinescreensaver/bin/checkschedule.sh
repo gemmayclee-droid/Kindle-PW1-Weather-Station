@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
-echo "$(date): bootstrap $0" >> "$BOOT_LOG" 2>&1
+echo "$(date): 啟動前置記錄 $0" >> "$BOOT_LOG" 2>&1
 ##############################################################################
 #
 # Checks the format of the schedule configuration value
@@ -20,7 +20,7 @@ fi
 if [ -e "utils.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
-	echo "Could not find utils.sh in `pwd`"
+	echo "在 `pwd` 找不到 utils.sh"
 	exit
 fi
 
@@ -44,7 +44,7 @@ EOF
 	END=$(( 60*$ENDHOUR + $ENDMINUTE ))
 
 	if [ $END -lt $START ]; then
-		echo "!!!!!!! End time is before start time."
+		echo "!!!!!!! 結束時間早於開始時間。"
 	fi
 
 	if [ $CURRENTMINUTE -ge $START ] && [ $CURRENTMINUTE -lt $END ]; then

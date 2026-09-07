@@ -18,7 +18,7 @@ logger () {
 }
 
 trace () {
-	logger "TRACE [$1] $2"
+	logger "追蹤 [$1] $2"
 }
 
 setup_debug_log () {
@@ -37,8 +37,8 @@ setup_debug_log () {
 		PS4='+ '
 		set -x
 	fi
-	trap 'RESULT=$?; logger "=== Online Screensaver exited: $0 (status $RESULT) ==="' 0
-	logger "=== Online Screensaver started: $0 ==="
+	trap 'RESULT=$?; logger "=== Online Screensaver 已結束：$0（狀態碼 $RESULT）==="' 0
+	logger "=== Online Screensaver 已啟動：$0 ==="
 }
 
 
@@ -56,7 +56,7 @@ currentTime () {
 set_rtc_wakeup()
 {
 	lipc-set-prop -i com.lab126.powerd rtcWakeup $1 2>&1
-	logger "rtcWakeup has been set to $1"
+	logger "已設定 rtcWakeup，喚醒倒數：$1 秒"
 }
 
 ##############################################################################
@@ -66,27 +66,27 @@ set_rtc_wakeup()
 wait_for () {
 	ENDWAIT=$(( $(currentTime) + $1 ))
 	REMAININGWAITTIME=$(( $ENDWAIT - $(currentTime) ))
-	logger "Starting to wait for timeout to expire: $1"
+	logger "開始等待下一次更新：$1 秒"
 
 	# wait for timeout to expire
 	while [ $REMAININGWAITTIME -gt 0 ]; do
 		EVENT=$(lipc-wait-event -s $1 com.lab126.powerd readyToSuspend,wakeupFromSuspend,resuming)
 		REMAININGWAITTIME=$(( $ENDWAIT - $(currentTime) ))
-		logger "Received event: $EVENT"
+		logger "收到電源事件：$EVENT"
 
 		case "$EVENT" in
 			readyToSuspend*)
 				set_rtc_wakeup $REMAININGWAITTIME
 			;;
 			wakeupFromSuspend*|resuming*)
-				logger "Finishing the wait"
+				logger "裝置已喚醒，結束等待"
 				break
 			;;
 			*)
-				logger "Ignored event: $EVENT"
+				logger "忽略電源事件：$EVENT"
 			;;
 		esac
 	done
 
-	logger "Wait finished"
+	logger "等待結束"
 }
