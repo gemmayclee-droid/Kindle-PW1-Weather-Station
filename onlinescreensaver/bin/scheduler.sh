@@ -4,126 +4,80 @@ BOOT_LOG=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
 echo "$(date): 啟動前置記錄 $0" >> "$BOOT_LOG" 2>&1
 ##############################################################################
 #
-# Fetch weather screensaver from a configurable URL at configurable intervals.
-#
-# Features:
-#   - updates even when device is suspended
-#   - refreshes screensaver image if active
-#   - turns WiFi on and back off if necessary
-#   - tries to use as little CPU as possible
-#
-##############################################################################
+# 在設定的工作日時刻更新螢幕保護圖片。非更新時段只等待下一個時刻，不執行
+# update.sh，以避免在夜間與週末喚醒 Wi-Fi 或產生圖片。
 
-# change to directory of this script
 cd "$(dirname "$0")"
 
-# load configuration
 if [ -e "config.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/config.sh
 else
-	# set default values
-	INTERVAL=240
+	WEEKDAY_UPDATE_TIMES="08:00 10:00 12:00 14:00 16:00 18:00 20:00"
 	RTC=0
 fi
 
-# load utils
 if [ -e "utils.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/utils.sh
 else
 	echo "在 `pwd` 找不到 utils.sh"
-	exit
+	exit 1
 fi
 
 setup_debug_log
 
+# 回傳距離下一個工作日更新時刻的秒數。參數為 1 時，即使現在剛好在一個
+# 更新時刻，也會尋找下一個時刻，避免完成更新後立刻重複執行。
+seconds_to_next_update () {
+	SKIP_CURRENT=${1:-0}
+	WEEKDAY=$(date +%w) # 0=週日，1=週一，...，6=週六
+	HOUR=$(date +%H)
+	MINUTE=$(date +%M)
+	HOUR=${HOUR#0}
+	MINUTE=${MINUTE#0}
+	[ -n "$HOUR" ] || HOUR=0
+	[ -n "$MINUTE" ] || MINUTE=0
+	CURRENT_MINUTE=$((HOUR * 60 + MINUTE))
 
-###############################################################################
-
-# create a two day filling schedule
-extend_schedule () {
-	SCHEDULE_ONE=""
-	SCHEDULE_TWO=""
-
-	LASTENDHOUR=0
-	LASTENDMINUTE=0
-	LASTEND=0
-	for schedule in $SCHEDULE; do
-		read STARTHOUR STARTMINUTE ENDHOUR ENDMINUTE THISINTERVAL << EOF
-			$( echo " $schedule" | sed -e 's/[:,=,\,,-]/ /g' -e 's/\([^0-9]\)0\([[:digit:]]\)/\1\2/g')
-EOF
-		START=$(( 60*$STARTHOUR + $STARTMINUTE ))
-		END=$(( 60*$ENDHOUR + $ENDMINUTE ))
-
-		# if the previous schedule entry ended before this one starts,
-		# create a filler
-		if [ $LASTEND -lt $START ]; then
-			SCHEDULE_ONE="$SCHEDULE_ONE $LASTENDHOUR:$LASTENDMINUTE-$STARTHOUR:$STARTMINUTE=$DEFAULTINTERVAL"
-			SCHEDULE_TWO="$SCHEDULE_TWO $(($LASTENDHOUR+24)):$LASTENDMINUTE-$(($STARTHOUR+24)):$STARTMINUTE=$DEFAULTINTERVAL"
-		fi
-		SCHEDULE_ONE="$SCHEDULE_ONE $schedule"
-		SCHEDULE_TWO="$SCHEDULE_TWO $(($STARTHOUR+24)):$STARTMINUTE-$(($ENDHOUR+24)):$ENDMINUTE=$THISINTERVAL"
-		
-		LASTENDHOUR=$ENDHOUR
-		LASTENDMINUTE=$ENDMINUTE
-		LASTEND=$END
-	done
-
-	# check that the schedule goes to midnight
-	if [ $LASTEND -lt $(( 24*60 )) ]; then
-		SCHEDULE_ONE="$SCHEDULE_ONE $LASTENDHOUR:$LASTENDMINUTE-24:00=$DEFAULTINTERVAL"
-		SCHEDULE_TWO="$SCHEDULE_TWO $(($LASTENDHOUR+24)):$LASTENDMINUTE-48:00=$DEFAULTINTERVAL"
+	if [ "$WEEKDAY" -ge 1 ] && [ "$WEEKDAY" -le 5 ]; then
+		for UPDATE_TIME in $WEEKDAY_UPDATE_TIMES; do
+			UPDATE_HOUR=${UPDATE_TIME%:*}
+			UPDATE_MINUTE=${UPDATE_TIME#*:}
+			UPDATE_HOUR=${UPDATE_HOUR#0}
+			UPDATE_MINUTE=${UPDATE_MINUTE#0}
+			[ -n "$UPDATE_HOUR" ] || UPDATE_HOUR=0
+			[ -n "$UPDATE_MINUTE" ] || UPDATE_MINUTE=0
+			SLOT_MINUTE=$((UPDATE_HOUR * 60 + UPDATE_MINUTE))
+			if [ "$CURRENT_MINUTE" -lt "$SLOT_MINUTE" ] || \
+				{ [ "$SKIP_CURRENT" -eq 0 ] && [ "$CURRENT_MINUTE" -eq "$SLOT_MINUTE" ]; }; then
+				echo $(( (SLOT_MINUTE - CURRENT_MINUTE) * 60 ))
+				return
+			fi
+		done
 	fi
-	
-	# to handle the day overlap, append the schedule again for hours 24-48.
-	SCHEDULE="$SCHEDULE_ONE $SCHEDULE_TWO"
-	logger "完整兩日排程：$SCHEDULE"
+
+	# 今日已無更新時刻，或今天是週末：等待到下一個週一 08:00。
+	case "$WEEKDAY" in
+		0) DAYS_TO_MONDAY=1 ;;
+		6) DAYS_TO_MONDAY=2 ;;
+		*) DAYS_TO_MONDAY=$((8 - WEEKDAY)) ;;
+	esac
+	echo $(( (DAYS_TO_MONDAY * 1440 - CURRENT_MINUTE + 480) * 60 ))
 }
 
+logger "工作日更新時刻：$WEEKDAY_UPDATE_TIMES（週六、週日不更新）"
 
-##############################################################################
+# 先等到下一個合法時刻，避免服務重啟時在非更新時段立刻更新。
+INITIAL_WAIT=$(seconds_to_next_update 0)
+if [ "$INITIAL_WAIT" -gt 0 ]; then
+	logger "目前非更新時刻，下一次更新在 $((INITIAL_WAIT / 60)) 分鐘後"
+	wait_for "$INITIAL_WAIT"
+fi
 
-# return number of minutes until next update
-get_time_to_next_update () {
-	CURRENTMINUTE=$(( 60*`date +%-H` + `date +%-M` ))
+while [ 1 -eq 1 ]; do
+	logger "到達工作日更新時刻，開始更新螢幕保護圖片"
+	/bin/sh ./update.sh
 
-	for schedule in $SCHEDULE; do
-		read STARTHOUR STARTMINUTE ENDHOUR ENDMINUTE INTERVAL << EOF
-			$( echo " $schedule" | sed -e 's/[:,=,\,,-]/ /g' -e 's/\([^0-9]\)0\([[:digit:]]\)/\1\2/g' )
-EOF
-		START=$(( 60*$STARTHOUR + $STARTMINUTE ))
-		END=$(( 60*$ENDHOUR + $ENDMINUTE ))
-
-		# ignore schedule entries that end prior to the current time
-		if [ $CURRENTMINUTE -gt $END ]; then
-			continue
-
-		# if this schedule entry covers the current time, use it
-		elif [ $CURRENTMINUTE -ge $START ] && [ $CURRENTMINUTE -lt $END ]; then
-			logger "套用排程 $schedule，下一次更新在 $INTERVAL 分鐘後"
-			NEXTUPDATE=$(( $CURRENTMINUTE + $INTERVAL))
-
-		# if the next update falls into (or overlaps) a following schedule
-		# entry, apply this schedule entry instead if it would trigger earlier
-		elif [ $(( $START + $INTERVAL )) -lt $NEXTUPDATE ]; then
-			logger "原定等待時間會與 $schedule 重疊，改套用此排程"
-			NEXTUPDATE=$(( $START + $INTERVAL ))
-		fi
-	done
-
-	logger "下一次更新在 $(( $NEXTUPDATE - $CURRENTMINUTE )) 分鐘後"
-	echo $(( $NEXTUPDATE - $CURRENTMINUTE ))
-}
-
-
-##############################################################################
-
-# use a 48 hour schedule
-extend_schedule
-
-# forever and ever, try to update the screensaver
-while [ 1 -eq 1 ]; do 
-	sh ./update.sh
-	
-	# wait for the next trigger time
-	wait_for $(( 60 * $(get_time_to_next_update) ))
+	NEXT_WAIT=$(seconds_to_next_update 1)
+	logger "本次更新結束，下一次更新在 $((NEXT_WAIT / 60)) 分鐘後"
+	wait_for "$NEXT_WAIT"
 done

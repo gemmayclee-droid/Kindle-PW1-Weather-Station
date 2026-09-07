@@ -9,8 +9,16 @@
 # sure you always have the latest image) and rarely (to not waste battery).
 DEFAULTINTERVAL=300
 
-# Schedule for updating the screensaver. Use checkschedule.sh to check whether
-# the format is correctly understood. 
+# 工作日更新時刻。scheduler.sh 僅會在週一至週五的這些時刻執行更新；週末
+# 與其他時段都不更新。格式為以空白分隔的 HH:MM（24 小時制）。
+#
+# 此設定目前為 08:00 至 20:00、每兩小時一次。
+WEEKDAY_UPDATE_TIMES="08:00 10:00 12:00 14:00 16:00 18:00 20:00"
+
+# 舊版每日排程設定，僅供 checkschedule.sh 相容性檢查使用。實際自動更新
+# 排程由 WEEKDAY_UPDATE_TIMES 控制。
+#
+# Use checkschedule.sh to check whether the format is correctly understood.
 #
 # The format is a space separated list of settings for different times of day:
 #       SCHEDULE="setting1 setting2 setting3 etc"
@@ -29,7 +37,7 @@ DEFAULTINTERVAL=300
 #
 # Use the checkschedule.sh script to verify that the setting is correct and
 # which would be the active interval.
-SCHEDULE="00:00-06:00=480 06:00-22:00=15 22:00-24:00=30"
+SCHEDULE="08:00-20:00=120"
 
 # URL of screensaver image. This really must be in the EXACT resolution of
 # your Kindle's screen (e.g. 600x800 or 758x1024) and really must be PNG.
