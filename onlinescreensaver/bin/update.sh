@@ -28,14 +28,20 @@ setup_debug_log
 
 # Local weatheriot mode: render weather.png on the Kindle, then use it as
 # the linkss screensaver image. This avoids requiring an HTTP image server.
+trace "update.sh:29" "Selecting update mode; IMAGE_URI=${IMAGE_URI:-<empty>}"
 if [ -z "$IMAGE_URI" ]; then
+	trace "update.sh:31" "Checking local weatheriot paths"
 	if [ -x "$LOCAL_WEATHER_SCRIPT" ] && [ -f "$LOCAL_WEATHER_IMAGE" -o -d "$(dirname "$LOCAL_WEATHER_IMAGE")" ]; then
+		trace "update.sh:33" "Running $LOCAL_WEATHER_SCRIPT"
 		logger "IMAGE_URI is empty, running local weatheriot renderer"
 		/bin/sh "$LOCAL_WEATHER_SCRIPT"
 		LOCAL_RET=$?
+		trace "update.sh:36" "weatheriot worker exit status=$LOCAL_RET"
 		if [ "$LOCAL_RET" -eq 0 ] && [ -s "$LOCAL_WEATHER_IMAGE" ]; then
+			trace "update.sh:38" "Copying $LOCAL_WEATHER_IMAGE to $SCREENSAVERFILE"
 			cp "$LOCAL_WEATHER_IMAGE" "$TMPFILE" && mv "$TMPFILE" "$SCREENSAVERFILE"
 			logger "Local weatheriot screensaver image updated"
+			trace "update.sh:41" "Refreshing screen only when Screen Saver is active"
 			lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
 				logger "Updating image on screen"
 				eips -f -g "$SCREENSAVERFILE"
@@ -44,12 +50,14 @@ if [ -z "$IMAGE_URI" ]; then
 			logger "Local weatheriot renderer failed (exit $LOCAL_RET)"
 		fi
 	else
+		trace "update.sh:49" "Local weatheriot script or directory is missing"
 		logger "No IMAGE_URI and local weatheriot renderer not found"
 	fi
 	exit 0
 fi
 
 # enable wireless if it is currently off
+trace "update.sh:58" "Using remote IMAGE_URI update mode"
 if [ 0 -eq `lipc-get-prop com.lab126.cmd wirelessEnable` ]; then
 	logger "WiFi is off, turning it on now"
 	lipc-set-prop com.lab126.cmd wirelessEnable 1
@@ -76,6 +84,7 @@ while [ 0 -eq $CONNECTED ]; do
 done
 
 if [ 1 -eq $CONNECTED ]; then
+	trace "update.sh:82" "Downloading $IMAGE_URI"
 	if wget -q $IMAGE_URI -O $TMPFILE; then
 		mv $TMPFILE $SCREENSAVERFILE
 		logger "Screen saver image updated"

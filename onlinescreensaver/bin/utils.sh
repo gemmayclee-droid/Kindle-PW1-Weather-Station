@@ -17,6 +17,10 @@ logger () {
 	echo `date`: $MSG >> $LOGFILE
 }
 
+trace () {
+	logger "TRACE [$1] $2"
+}
+
 setup_debug_log () {
 	if [ -z "$LOGFILE" ]; then
 		return
@@ -28,7 +32,9 @@ setup_debug_log () {
 
 	exec >> "$LOGFILE" 2>&1
 	if [ "x$DEBUG" = "x1" ]; then
-		PS4='+${0}:${LINENO}: '
+		# BusyBox ash on PW1 prints parameter expressions in PS4 literally.
+		# Use explicit TRACE markers in callers for portable source locations.
+		PS4='+ '
 		set -x
 	fi
 	trap 'RESULT=$?; logger "=== Online Screensaver exited: $0 (status $RESULT) ==="' 0
