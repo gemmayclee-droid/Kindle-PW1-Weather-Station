@@ -55,11 +55,12 @@ seconds_to_next_update () {
 		done
 	fi
 
-	# 今日已無更新時刻，或今天是週末：等待到下一個週一 08:00。
+	# 今日已無更新時刻，或今天是週末：計算下一個工作日的 08:00。
 	case "$WEEKDAY" in
 		0) DAYS_TO_MONDAY=1 ;;
 		6) DAYS_TO_MONDAY=2 ;;
-		*) DAYS_TO_MONDAY=$((8 - WEEKDAY)) ;;
+		5) DAYS_TO_MONDAY=3 ;;
+		*) DAYS_TO_MONDAY=1 ;;
 	esac
 	echo $(( (DAYS_TO_MONDAY * 1440 - CURRENT_MINUTE + 480) * 60 ))
 }
