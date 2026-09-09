@@ -42,6 +42,16 @@ install_screensaver_image () {
 		fi
 	fi
 
+	# Linkss 重新開機時會將多張圖片重新編號。同步所有已編號的 PW1
+	# 圖片，避免輪播到上一輪留下的舊天氣圖。
+	for EXISTING_IMAGE in "$SCREENSAVERFOLDER"/bg_ss*.png "$SCREENSAVERFOLDER"/bg_medium_ss*.png; do
+		[ -f "$EXISTING_IMAGE" ] || continue
+		if ! cp "$SOURCE_IMAGE" "$EXISTING_IMAGE"; then
+			log_required "無法同步既有螢幕保護圖片：$EXISTING_IMAGE"
+			return 1
+		fi
+	done
+
 	return 0
 }
 
