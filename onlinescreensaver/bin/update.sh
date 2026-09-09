@@ -26,6 +26,20 @@ fi
 
 setup_debug_log
 
+# KUAL 可能快取新增的選單動作；若存在一次性診斷旗標，改由已知可執行的
+# Update now 入口先收集 Linkss 系統狀態。成功後自動清除旗標。
+LINKSS_DIAGNOSTIC_REQUEST=/mnt/us/extensions/onlinescreensaver/linkss-diagnostic.request
+LINKSS_DIAGNOSTIC_LOG=/mnt/us/extensions/onlinescreensaver/linkss-diagnostic.log
+if [ -f "$LINKSS_DIAGNOSTIC_REQUEST" ]; then
+	/bin/sh /mnt/us/extensions/onlinescreensaver/bin/diagnose-linkss.sh
+	if [ -s "$LINKSS_DIAGNOSTIC_LOG" ]; then
+		rm -f "$LINKSS_DIAGNOSTIC_REQUEST"
+		log_required "Linkss 診斷已完成"
+	else
+		log_required "Linkss 診斷未產生日誌"
+	fi
+fi
+
 # 將新圖片寫入目前 PW1 使用的檔名，並同步舊版 PW 檔名，避免 Linkss 載入
 # 舊圖片。兩個目標任一失敗時，保留明確錯誤日誌。
 install_screensaver_image () {
