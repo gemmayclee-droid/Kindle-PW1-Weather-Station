@@ -52,10 +52,10 @@ LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
 # folder that holds the screensavers
 SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/
 
-# In which file to store the downloaded image. Make sure this is a valid
-# screensaver file. E.g. check the current screensaver folder to see what
-# the first filename is, then just use this. THIS FILE WILL BE OVERWRITTEN!
-SCREENSAVERFILE=$SCREENSAVERFOLDER/bg_medium_ss00.png
+# PW1 on firmware 5.5+ uses the bg_ss prefix. Keep the legacy PW prefix in
+# sync as well, so Linkss cannot fall back to an old image after a reboot.
+SCREENSAVERFILE=$SCREENSAVERFOLDER/bg_ss00.png
+SCREENSAVER_MIRROR_FILE=$SCREENSAVERFOLDER/bg_medium_ss00.png
 
 # Whether to create log output (1) or not (0).
 LOGGING=1

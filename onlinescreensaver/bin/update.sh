@@ -26,6 +26,25 @@ fi
 
 setup_debug_log
 
+# 將新圖片寫入目前 PW1 使用的檔名，並同步舊版 PW 檔名，避免 Linkss 載入
+# 舊圖片。兩個目標任一失敗時，保留明確錯誤日誌。
+install_screensaver_image () {
+	SOURCE_IMAGE=$1
+	if ! cp "$SOURCE_IMAGE" "$SCREENSAVERFILE"; then
+		log_required "無法寫入螢幕保護圖片：$SCREENSAVERFILE"
+		return 1
+	fi
+
+	if [ -n "$SCREENSAVER_MIRROR_FILE" ] && [ "$SCREENSAVER_MIRROR_FILE" != "$SCREENSAVERFILE" ]; then
+		if ! cp "$SOURCE_IMAGE" "$SCREENSAVER_MIRROR_FILE"; then
+			log_required "無法同步螢幕保護圖片：$SCREENSAVER_MIRROR_FILE"
+			return 1
+		fi
+	fi
+
+	return 0
+}
+
 # Online Screensaver 使用自己的 RTC 排程。若舊版 weatheriot 背景排程仍在，
 # 將其停止並移除 PID，避免雙重更新與 preventScreenSaver 持續開啟。
 WEATHERIOT_PID_FILE=/mnt/us/extensions/weatheriot/schedule.pid
@@ -66,14 +85,15 @@ if [ -z "$IMAGE_URI" ]; then
 		fi
 		trace "update.sh:36" "weatheriot worker 結束狀態碼=$LOCAL_RET"
 		if [ "$LOCAL_RET" -eq 0 ] && [ -s "$LOCAL_WEATHER_IMAGE" ]; then
-			trace "update.sh:38" "複製 $LOCAL_WEATHER_IMAGE 至 $SCREENSAVERFILE"
-			cp "$LOCAL_WEATHER_IMAGE" "$TMPFILE" && mv "$TMPFILE" "$SCREENSAVERFILE"
-			logger "本機 weatheriot 螢幕保護圖片已更新"
-			trace "update.sh:41" "僅在螢幕保護啟用時重新整理畫面"
-			lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
-				logger "正在更新螢幕上的圖片"
-				eips -f -g "$SCREENSAVERFILE"
-			)
+			trace "update.sh:38" "複製 $LOCAL_WEATHER_IMAGE 至 Linkss 螢幕保護圖片"
+			if install_screensaver_image "$LOCAL_WEATHER_IMAGE"; then
+				logger "本機 weatheriot 螢幕保護圖片已更新"
+				trace "update.sh:41" "僅在螢幕保護啟用時重新整理畫面"
+				lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
+					logger "正在更新螢幕上的圖片"
+					eips -f -g "$SCREENSAVERFILE"
+				)
+			fi
 		else
 			log_required "本機 weatheriot 圖片產生失敗（狀態碼 $LOCAL_RET）"
 		fi
@@ -114,14 +134,15 @@ done
 if [ 1 -eq $CONNECTED ]; then
 	trace "update.sh:82" "下載 $IMAGE_URI"
 	if wget -q $IMAGE_URI -O $TMPFILE; then
-		mv $TMPFILE $SCREENSAVERFILE
-		logger "螢幕保護圖片已更新"
+		if install_screensaver_image "$TMPFILE"; then
+			logger "螢幕保護圖片已更新"
 
-		# refresh screen
-		lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
-			logger "正在更新螢幕上的圖片"
-			eips -f -g $SCREENSAVERFILE
-		)
+			# refresh screen
+			lipc-get-prop com.lab126.powerd status | grep "Screen Saver" && (
+				logger "正在更新螢幕上的圖片"
+				eips -f -g $SCREENSAVERFILE
+			)
+		fi
 	else
 		log_required "更新螢幕保護圖片時發生錯誤"
 		if [ 1 -eq $DONOTRETRY ]; then
