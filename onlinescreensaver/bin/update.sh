@@ -26,6 +26,25 @@ fi
 
 setup_debug_log
 
+# Online Screensaver 使用自己的 RTC 排程。若舊版 weatheriot 背景排程仍在，
+# 將其停止並移除 PID，避免雙重更新與 preventScreenSaver 持續開啟。
+WEATHERIOT_PID_FILE=/mnt/us/extensions/weatheriot/schedule.pid
+WEATHERIOT_UNSCHEDULE=/mnt/us/extensions/weatheriot/unschedule.sh
+if [ -f "$WEATHERIOT_PID_FILE" ]; then
+	logger "偵測到舊 weatheriot 排程，正在停用"
+	if [ -x "$WEATHERIOT_UNSCHEDULE" ]; then
+		/bin/sh "$WEATHERIOT_UNSCHEDULE"
+		if [ -f "$WEATHERIOT_PID_FILE" ]; then
+			log_required "無法移除舊 weatheriot 排程 PID 檔"
+		else
+			log_required "已停用舊 weatheriot 排程，避免重複更新與耗電"
+		fi
+	else
+		rm -f "$WEATHERIOT_PID_FILE"
+		log_required "找不到 weatheriot 停用腳本，已移除舊排程 PID 檔"
+	fi
+fi
+
 # Local weatheriot mode: render weather.png on the Kindle, then use it as
 # the linkss screensaver image. This avoids requiring an HTTP image server.
 trace "update.sh:29" "選擇更新模式；IMAGE_URI=${IMAGE_URI:-<空白>}"
@@ -36,6 +55,15 @@ if [ -z "$IMAGE_URI" ]; then
 		logger "IMAGE_URI 為空白，改用本機 weatheriot 產生圖片"
 		/bin/sh "$LOCAL_WEATHER_SCRIPT"
 		LOCAL_RET=$?
+		# worker.sh 為獨立 weatheriot 排程而保留 preventScreenSaver；Online
+		# Screensaver 已可使用 RTC 喚醒，因此此處必須恢復休眠能力。
+		lipc-set-prop com.lab126.powerd preventScreenSaver 0
+		POWER_RET=$?
+		if [ "$POWER_RET" -ne 0 ]; then
+			log_required "無法恢復 Kindle 休眠（preventScreenSaver=0，狀態碼 $POWER_RET）"
+		else
+			logger "已恢復 Kindle 休眠（preventScreenSaver=0）"
+		fi
 		trace "update.sh:36" "weatheriot worker 結束狀態碼=$LOCAL_RET"
 		if [ "$LOCAL_RET" -eq 0 ] && [ -s "$LOCAL_WEATHER_IMAGE" ]; then
 			trace "update.sh:38" "複製 $LOCAL_WEATHER_IMAGE 至 $SCREENSAVERFILE"
@@ -47,11 +75,11 @@ if [ -z "$IMAGE_URI" ]; then
 				eips -f -g "$SCREENSAVERFILE"
 			)
 		else
-			logger "本機 weatheriot 圖片產生失敗（狀態碼 $LOCAL_RET）"
+			log_required "本機 weatheriot 圖片產生失敗（狀態碼 $LOCAL_RET）"
 		fi
 	else
 		trace "update.sh:49" "找不到本機 weatheriot 腳本或目錄"
-		logger "IMAGE_URI 為空白，且找不到本機 weatheriot 圖片產生器"
+		log_required "IMAGE_URI 為空白，且找不到本機 weatheriot 圖片產生器"
 	fi
 	exit 0
 fi
@@ -75,7 +103,7 @@ while [ 0 -eq $CONNECTED ]; do
 	if [ 0 -eq $CONNECTED ]; then
 		TIMER=$(($TIMER-1))
 		if [ 0 -eq $TIMER ]; then
-			logger "等待 ${NETWORK_TIMEOUT} 秒後仍無網際網路連線，停止本次更新。"
+			log_required "等待 ${NETWORK_TIMEOUT} 秒後仍無網際網路連線，停止本次更新。"
 			break
 		else
 			sleep 1
@@ -95,7 +123,7 @@ if [ 1 -eq $CONNECTED ]; then
 			eips -f -g $SCREENSAVERFILE
 		)
 	else
-		logger "更新螢幕保護圖片時發生錯誤"
+		log_required "更新螢幕保護圖片時發生錯誤"
 		if [ 1 -eq $DONOTRETRY ]; then
 			touch $SCREENSAVERFILE
 		fi

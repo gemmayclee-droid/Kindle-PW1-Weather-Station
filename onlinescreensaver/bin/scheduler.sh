@@ -12,7 +12,7 @@ cd "$(dirname "$0")"
 if [ -e "config.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/config.sh
 else
-	WEEKDAY_UPDATE_TIMES="08:00 10:00 12:00 14:00 16:00 18:00 20:00"
+	WEEKDAY_UPDATE_TIMES="08:00 11:00 14:00 17:00 20:00"
 	RTC=0
 fi
 

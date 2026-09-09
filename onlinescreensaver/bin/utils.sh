@@ -14,11 +14,29 @@ logger () {
 		LOGFILE=/dev/stdout
 	fi
 
+	if [ "${DEBUG:-0}" -ge 1 ]; then
+		echo `date`: $MSG >> $LOGFILE
+	fi
+}
+
+log_required () {
+	MSG=$1
+
+	if [ "x1" != "x$LOGGING" ]; then
+		return
+	fi
+
+	if [ -z "$LOGFILE" ]; then
+		LOGFILE=/dev/stdout
+	fi
+
 	echo `date`: $MSG >> $LOGFILE
 }
 
 trace () {
-	logger "追蹤 [$1] $2"
+	if [ "${DEBUG:-0}" -ge 2 ]; then
+		log_required "追蹤 [$1] $2"
+	fi
 }
 
 setup_debug_log () {
@@ -31,7 +49,7 @@ setup_debug_log () {
 	fi
 
 	exec >> "$LOGFILE" 2>&1
-	if [ "x$DEBUG" = "x1" ]; then
+	if [ "${DEBUG:-0}" -ge 2 ]; then
 		# BusyBox ash on PW1 prints parameter expressions in PS4 literally.
 		# Use explicit TRACE markers in callers for portable source locations.
 		PS4='+ '

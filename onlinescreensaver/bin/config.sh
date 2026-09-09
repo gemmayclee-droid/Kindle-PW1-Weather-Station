@@ -12,8 +12,8 @@ DEFAULTINTERVAL=300
 # 工作日更新時刻。scheduler.sh 僅會在週一至週五的這些時刻執行更新；週末
 # 與其他時段都不更新。格式為以空白分隔的 HH:MM（24 小時制）。
 #
-# 此設定目前為 08:00 至 20:00、每兩小時一次。
-WEEKDAY_UPDATE_TIMES="08:00 10:00 12:00 14:00 16:00 18:00 20:00"
+# 此設定目前為 08:00 至 20:00、每三小時一次（每日五次）。
+WEEKDAY_UPDATE_TIMES="08:00 11:00 14:00 17:00 20:00"
 
 # 舊版每日排程設定，僅供 checkschedule.sh 相容性檢查使用。實際自動更新
 # 排程由 WEEKDAY_UPDATE_TIMES 控制。
@@ -37,7 +37,7 @@ WEEKDAY_UPDATE_TIMES="08:00 10:00 12:00 14:00 16:00 18:00 20:00"
 #
 # Use the checkschedule.sh script to verify that the setting is correct and
 # which would be the active interval.
-SCHEDULE="08:00-20:00=120"
+SCHEDULE="08:00-20:00=180"
 
 # URL of screensaver image. This really must be in the EXACT resolution of
 # your Kindle's screen (e.g. 600x800 or 758x1024) and really must be PNG.
@@ -64,9 +64,9 @@ LOGGING=1
 # reaches 256 KiB.
 LOGFILE=/mnt/us/extensions/onlinescreensaver/onlinescreensaver.log
 
-# Enable shell xtrace in the diagnostic log. Trace entries include the script
-# path and source line number to help pinpoint a failing command.
-DEBUG=1
+# 日誌詳細度：0=必要輸出（錯誤與排程處理結果）、1=簡要輸出、
+# 2=詳細輸出（包含追蹤標記與 shell 指令）。
+DEBUG=0
 
 # whether to disable WiFi after the script has finished (if WiFi was off
 # when the script started, it will always turn it off)
