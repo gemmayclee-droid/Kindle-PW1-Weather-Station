@@ -5,9 +5,12 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-09-01"
+VERSION="worker-once-2026-09-18"
 KEEP_DISPLAY=0
 SCHEDULED=0
+NETWORK_ATTEMPTS=20
+NETWORK_DELAY=3
+RENDER_TIMEOUT=90
 
 if [ "$1" = "--scheduled" ]; then
     SCHEDULED=1
@@ -37,6 +40,40 @@ image_info() {
     fi
 }
 
+wait_for_network() {
+    ATTEMPT=1
+    while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
+        # IP 連線恢復後，Kindle 的 DNS 常會再晚幾十秒才可用；直接檢查 API 網域。
+        if /usr/bin/python3 -c 'import socket; socket.gethostbyname("api.open-meteo.com")' >/dev/null 2>&1; then
+            echo "WiFi 與 DNS 已就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
+            return 0
+        fi
+        echo "等待 WiFi 與 DNS 就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
+        sleep "$NETWORK_DELAY"
+        ATTEMPT=$((ATTEMPT + 1))
+    done
+    return 1
+}
+
+restart_wifi() {
+    echo "WiFi／DNS 尚未就緒，重新啟動 WiFi 後再試一次" >> "$LOG"
+    lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+    sleep 3
+    lipc-set-prop com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
+}
+
+run_renderer() {
+    echo "render.py 開始時間: $(date)" >> "$LOG"
+    START_TS=$(date +%s)
+    timeout -t "$RENDER_TIMEOUT" /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
+    RENDER_RET=$?
+    END_TS=$(date +%s)
+    echo "render.py 結束時間: $(date)" >> "$LOG"
+    echo "render.py 執行秒數: $((END_TS - START_TS)) 秒" >> "$LOG"
+    echo "render.py return code: $RENDER_RET" >> "$LOG"
+    return "$RENDER_RET"
+}
+
 trap cleanup_power EXIT INT TERM
 
 echo "===================================" >> "$LOG"
@@ -61,22 +98,6 @@ fi
 echo "開啟 WiFi..." >> "$LOG"
 lipc-set-prop com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
 
-COUNT=0
-WIFI_OK=0
-while [ $COUNT -lt 10 ]; do
-    if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
-        echo "WiFi ping 已連線" >> "$LOG"
-        WIFI_OK=1
-        break
-    fi
-    sleep 2
-    COUNT=$((COUNT + 1))
-done
-
-if [ "$WIFI_OK" -ne 1 ]; then
-    echo "WiFi ping 檢查失敗，仍嘗試 HTTPS 天氣更新" >> "$LOG"
-fi
-
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
 LON=$(grep "<lon>" config.xml | sed 's/.*<lon>\(.*\)<\/lon>.*/\1/' | tr -d '\r' | tr -d ' ')
@@ -90,14 +111,36 @@ echo "城市: $CITY" >> "$LOG"
 echo "座標: $LAT,$LON" >> "$LOG"
 echo "語言: $LANGUAGE" >> "$LOG"
 
-echo "render.py 開始時間: $(date)" >> "$LOG"
-START_TS=$(date +%s)
-timeout -t 60 /usr/bin/python3 render.py "$CITY" "$LAT" "$LON" "$LANGUAGE" >> "$LOG" 2>&1
-RET=$?
-END_TS=$(date +%s)
-echo "render.py 結束時間: $(date)" >> "$LOG"
-echo "render.py 執行秒數: $((END_TS - START_TS)) 秒" >> "$LOG"
-echo "render.py return code: $RET" >> "$LOG"
+NETWORK_READY=0
+if wait_for_network; then
+    NETWORK_READY=1
+else
+    restart_wifi
+    if wait_for_network; then
+        NETWORK_READY=1
+    fi
+fi
+
+if [ "$NETWORK_READY" -eq 1 ]; then
+    run_renderer
+    RET=$?
+
+    # 即使 DNS 已回來，首次 HTTPS 連線仍可能因剛喚醒而失敗；只重試一次。
+    if [ "$RET" -ne 0 ]; then
+        echo "首次天氣更新失敗，重新啟動 WiFi 後重試一次" >> "$LOG"
+        restart_wifi
+        if wait_for_network; then
+            run_renderer
+            RET=$?
+        else
+            RET=75
+            echo "WiFi／DNS 在第二次等待後仍未就緒，略過天氣更新以節省電力" >> "$LOG"
+        fi
+    fi
+else
+    RET=75
+    echo "WiFi／DNS 未就緒，略過天氣更新以節省電力" >> "$LOG"
+fi
 
 if [ $RET -eq 124 ]; then
     echo "render.py timeout，清理 python3" >> "$LOG"
