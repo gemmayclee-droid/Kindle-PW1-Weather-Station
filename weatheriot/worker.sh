@@ -5,10 +5,10 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-09-18"
+VERSION="worker-once-2026-09-18.1"
 KEEP_DISPLAY=0
 SCHEDULED=0
-NETWORK_ATTEMPTS=20
+NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
 RENDER_TIMEOUT=90
 
@@ -44,7 +44,8 @@ wait_for_network() {
     ATTEMPT=1
     while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
         # IP 連線恢復後，Kindle 的 DNS 常會再晚幾十秒才可用；直接檢查 API 網域。
-        if /usr/bin/python3 -c 'import socket; socket.gethostbyname("api.open-meteo.com")' >/dev/null 2>&1; then
+        # PW1 上 gethostbyname() 在 DNS 尚未回復時可能永久阻塞，必須強制限時。
+        if timeout -t 5 /usr/bin/python3 -c 'import socket; socket.gethostbyname("api.open-meteo.com")' >/dev/null 2>&1; then
             echo "WiFi 與 DNS 已就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
             return 0
         fi
