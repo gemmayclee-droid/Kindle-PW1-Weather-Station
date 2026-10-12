@@ -48,6 +48,8 @@ IMAGE_URI=""
 # script and copies its generated weather.png into the linkss screensaver.
 LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker.sh
 LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
+# 本機天氣工作程序的最長執行時間。避免 DNS 或 Wi-Fi 卡住時連帶停止整個排程。
+LOCAL_WEATHER_TIMEOUT=180
 
 # folder that holds the screensavers
 SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/

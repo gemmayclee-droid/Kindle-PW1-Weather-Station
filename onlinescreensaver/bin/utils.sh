@@ -86,19 +86,23 @@ wait_for () {
 	REMAININGWAITTIME=$(( $ENDWAIT - $(currentTime) ))
 	logger "開始等待下一次更新：$1 秒"
 
-	# wait for timeout to expire
+	# PW1 的 RTC 對多日鬧鐘不可靠。最長拆成六小時一段，週末也會定期
+	# 重新設定下一段 RTC；裝置中途醒來時繼續等待，不能提早執行 update.sh。
 	while [ $REMAININGWAITTIME -gt 0 ]; do
-		EVENT=$(lipc-wait-event -s $1 com.lab126.powerd readyToSuspend,wakeupFromSuspend,resuming)
+		CHUNKWAIT=$REMAININGWAITTIME
+		if [ "$CHUNKWAIT" -gt 21600 ]; then
+			CHUNKWAIT=21600
+		fi
+		EVENT=$(lipc-wait-event -s $CHUNKWAIT com.lab126.powerd readyToSuspend,wakeupFromSuspend,resuming)
 		REMAININGWAITTIME=$(( $ENDWAIT - $(currentTime) ))
 		logger "收到電源事件：$EVENT"
 
 		case "$EVENT" in
 			readyToSuspend*)
-				set_rtc_wakeup $REMAININGWAITTIME
+				set_rtc_wakeup $CHUNKWAIT
 			;;
 			wakeupFromSuspend*|resuming*)
-				logger "裝置已喚醒，結束等待"
-				break
+				logger "裝置已喚醒，仍等待下一個排程時刻"
 			;;
 			*)
 				logger "忽略電源事件：$EVENT"

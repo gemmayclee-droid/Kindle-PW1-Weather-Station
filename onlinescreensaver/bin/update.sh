@@ -96,8 +96,15 @@ if [ -z "$IMAGE_URI" ]; then
 	if [ -x "$LOCAL_WEATHER_SCRIPT" ] && [ -f "$LOCAL_WEATHER_IMAGE" -o -d "$(dirname "$LOCAL_WEATHER_IMAGE")" ]; then
 		trace "update.sh:33" "執行 $LOCAL_WEATHER_SCRIPT"
 		logger "IMAGE_URI 為空白，改用本機 weatheriot 產生圖片"
-		/bin/sh "$LOCAL_WEATHER_SCRIPT"
+		# weatheriot 的 DNS／網路操作可能因系統休眠而卡住。外層必須有限時，
+		# 否則 scheduler.sh 會永遠等待這個子程序，後續工作日排程全部失效。
+		timeout -t "$LOCAL_WEATHER_TIMEOUT" /bin/sh "$LOCAL_WEATHER_SCRIPT"
 		LOCAL_RET=$?
+		if [ "$LOCAL_RET" -eq 124 ] || [ "$LOCAL_RET" -eq 137 ] || [ "$LOCAL_RET" -eq 143 ]; then
+			log_required "weatheriot 執行逾時（${LOCAL_WEATHER_TIMEOUT} 秒），已中止本次更新以保留後續排程"
+			killall python3 >/dev/null 2>&1
+			lipc-set-prop com.lab126.cmd wirelessEnable 0 >/dev/null 2>&1
+		fi
 		# worker.sh 為獨立 weatheriot 排程而保留 preventScreenSaver；Online
 		# Screensaver 已可使用 RTC 喚醒，因此此處必須恢復休眠能力。
 		lipc-set-prop com.lab126.powerd preventScreenSaver 0
