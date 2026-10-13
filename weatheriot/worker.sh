@@ -5,13 +5,11 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-13"
+VERSION="worker-once-2026-10-13.1"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
-NETWORK_PROBE_TIMEOUT=8
-NETWORK_STABLE_SUCCESSES=2
 NETWORK_RECOVERY_DELAY=10
 RENDER_TIMEOUT=90
 
@@ -45,20 +43,14 @@ image_info() {
 
 wait_for_network() {
     ATTEMPT=1
-    STABLE_SUCCESSES=0
     while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
-        # 只解析 DNS 不代表後續 HTTPS 還能連線。以實際 API TLS 連線驗證，
-        # 並要求連續兩次成功，避免 PW1 剛從休眠醒來時的短暫假陽性。
-        if timeout -t "$NETWORK_PROBE_TIMEOUT" /usr/bin/python3 -c 'import requests; requests.get("https://api.open-meteo.com", timeout=5, verify=False)' >/dev/null 2>&1; then
-            STABLE_SUCCESSES=$((STABLE_SUCCESSES + 1))
-            echo "Open-Meteo HTTPS 連線成功（穩定檢查 $STABLE_SUCCESSES/$NETWORK_STABLE_SUCCESSES；第 $ATTEMPT/$NETWORK_ATTEMPTS 次）" >> "$LOG"
-            if [ "$STABLE_SUCCESSES" -ge "$NETWORK_STABLE_SUCCESSES" ]; then
-                echo "WiFi、DNS 與 HTTPS 已穩定就緒" >> "$LOG"
-                return 0
-            fi
+        # PW1 的 HTTPS 預檢會偶發逾時，即使 render.py 隨後可正常更新；
+        # 只做有限時的 DNS 查詢，讓實際天氣請求決定連線是否可用。
+        if timeout -t 5 /usr/bin/python3 -c 'import socket; socket.gethostbyname("api.open-meteo.com")' >/dev/null 2>&1; then
+            echo "WiFi 與 DNS 已就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
+            return 0
         else
-            STABLE_SUCCESSES=0
-            echo "等待 WiFi、DNS 與 HTTPS 就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
+            echo "等待 WiFi 與 DNS 就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
         fi
         sleep "$NETWORK_DELAY"
         ATTEMPT=$((ATTEMPT + 1))
