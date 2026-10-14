@@ -5,7 +5,7 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-13.1"
+VERSION="worker-once-2026-10-14"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
@@ -18,9 +18,21 @@ if [ "$1" = "--scheduled" ]; then
     KEEP_DISPLAY=1
 fi
 
+enable_wifi() {
+    # PW1 同時需要 cmd 與 wifid 兩個 LIPC 狀態為啟用；只設 wirelessEnable
+    # 有時會讓 radio 開啟但 wifid 未重新建立 DHCP/DNS 連線。
+    lipc-set-prop -i com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
+    lipc-set-prop -i com.lab126.wifid enable 1 >> "$LOG" 2>&1
+}
+
+disable_wifi() {
+    lipc-set-prop -i com.lab126.wifid enable 0 >> "$LOG" 2>&1
+    lipc-set-prop -i com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+}
+
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
-    lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+    disable_wifi
     if [ "$KEEP_DISPLAY" -eq 1 ]; then
         echo "保持螢幕保護關閉，避免 weather.png 被覆蓋" >> "$LOG"
         lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
@@ -60,9 +72,9 @@ wait_for_network() {
 
 restart_wifi() {
     echo "WiFi／DNS 尚未就緒，重新啟動 WiFi 後再試一次" >> "$LOG"
-    lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+    disable_wifi
     sleep 3
-    lipc-set-prop com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
+    enable_wifi
 }
 
 run_renderer() {
@@ -99,7 +111,7 @@ if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
 fi
 
 echo "開啟 WiFi..." >> "$LOG"
-lipc-set-prop com.lab126.cmd wirelessEnable 1 >> "$LOG" 2>&1
+enable_wifi
 
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
@@ -152,7 +164,7 @@ if [ $RET -eq 124 ]; then
 fi
 
 echo "關閉 WiFi..." >> "$LOG"
-lipc-set-prop com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+disable_wifi
 
 echo "更新後圖片狀態:" >> "$LOG"
 image_info
