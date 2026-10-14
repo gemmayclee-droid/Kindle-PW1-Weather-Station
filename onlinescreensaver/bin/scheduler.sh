@@ -13,6 +13,8 @@ if [ -e "config.sh" ]; then
 	. /mnt/us/extensions/onlinescreensaver/bin/config.sh
 else
 	WEEKDAY_UPDATE_TIMES="08:00 11:00 14:00 17:00 20:00"
+	LOCAL_WEATHER_RETRY_COUNT=2
+	LOCAL_WEATHER_RETRY_DELAY=900
 	RTC=0
 fi
 
@@ -76,7 +78,24 @@ fi
 
 while [ 1 -eq 1 ]; do
 	logger "到達工作日更新時刻，開始更新螢幕保護圖片"
-	/bin/sh ./update.sh
+	UPDATE_ATTEMPT=0
+	UPDATE_RET=1
+	while [ "$UPDATE_ATTEMPT" -le "$LOCAL_WEATHER_RETRY_COUNT" ]; do
+		/bin/sh ./update.sh
+		UPDATE_RET=$?
+		if [ "$UPDATE_RET" -eq 0 ]; then
+			break
+		fi
+
+		UPDATE_ATTEMPT=$((UPDATE_ATTEMPT + 1))
+		if [ "$UPDATE_ATTEMPT" -le "$LOCAL_WEATHER_RETRY_COUNT" ]; then
+			log_required "天氣更新失敗（狀態碼 $UPDATE_RET），$LOCAL_WEATHER_RETRY_DELAY 秒後第 $UPDATE_ATTEMPT 次補救重試"
+			wait_for "$LOCAL_WEATHER_RETRY_DELAY"
+		fi
+	done
+	if [ "$UPDATE_RET" -ne 0 ]; then
+		log_required "天氣更新已嘗試 $((LOCAL_WEATHER_RETRY_COUNT + 1)) 次仍失敗，等待下一個正式時段"
+	fi
 
 	NEXT_WAIT=$(seconds_to_next_update 1)
 	logger "本次更新結束，下一次更新在 $((NEXT_WAIT / 60)) 分鐘後"

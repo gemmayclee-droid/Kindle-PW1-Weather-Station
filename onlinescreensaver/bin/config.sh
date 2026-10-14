@@ -50,6 +50,10 @@ LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker.sh
 LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
 # 本機天氣工作程序的最長執行時間。避免 DNS 或 Wi-Fi 卡住時連帶停止整個排程。
 LOCAL_WEATHER_TIMEOUT=180
+# 天氣更新失敗時的排程層補救：每次間隔 15 分鐘，最多額外嘗試兩次。
+# 僅在失敗時啟用，正常情況仍維持每日五個正式更新時段。
+LOCAL_WEATHER_RETRY_COUNT=2
+LOCAL_WEATHER_RETRY_DELAY=900
 
 # folder that holds the screensavers
 SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/

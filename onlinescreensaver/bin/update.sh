@@ -92,6 +92,7 @@ fi
 # the linkss screensaver image. This avoids requiring an HTTP image server.
 trace "update.sh:29" "選擇更新模式；IMAGE_URI=${IMAGE_URI:-<空白>}"
 if [ -z "$IMAGE_URI" ]; then
+	LOCAL_RET=1
 	trace "update.sh:31" "檢查本機 weatheriot 路徑"
 	if [ -x "$LOCAL_WEATHER_SCRIPT" ] && [ -f "$LOCAL_WEATHER_IMAGE" -o -d "$(dirname "$LOCAL_WEATHER_IMAGE")" ]; then
 		trace "update.sh:33" "執行 $LOCAL_WEATHER_SCRIPT"
@@ -124,15 +125,19 @@ if [ -z "$IMAGE_URI" ]; then
 					logger "正在更新螢幕上的圖片"
 					eips -f -g "$SCREENSAVERFILE"
 				)
+			else
+				LOCAL_RET=1
+				log_required "本機 weatheriot 圖片無法安裝至 Linkss"
 			fi
 		else
 			log_required "本機 weatheriot 圖片產生失敗（狀態碼 $LOCAL_RET）"
 		fi
 	else
+		LOCAL_RET=1
 		trace "update.sh:49" "找不到本機 weatheriot 腳本或目錄"
 		log_required "IMAGE_URI 為空白，且找不到本機 weatheriot 圖片產生器"
 	fi
-	exit 0
+	exit "$LOCAL_RET"
 fi
 
 # enable wireless if it is currently off
