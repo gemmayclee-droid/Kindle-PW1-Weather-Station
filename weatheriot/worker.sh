@@ -5,12 +5,11 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-14"
+VERSION="worker-once-2026-10-15"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
-NETWORK_RECOVERY_DELAY=10
 RENDER_TIMEOUT=90
 
 if [ "$1" = "--scheduled" ]; then
@@ -70,13 +69,6 @@ wait_for_network() {
     return 1
 }
 
-restart_wifi() {
-    echo "WiFi／DNS 尚未就緒，重新啟動 WiFi 後再試一次" >> "$LOG"
-    disable_wifi
-    sleep 3
-    enable_wifi
-}
-
 run_renderer() {
     echo "render.py 開始時間: $(date)" >> "$LOG"
     START_TS=$(date +%s)
@@ -129,33 +121,17 @@ echo "語言: $LANGUAGE" >> "$LOG"
 NETWORK_READY=0
 if wait_for_network; then
     NETWORK_READY=1
-else
-    restart_wifi
-    if wait_for_network; then
-        NETWORK_READY=1
-    fi
 fi
 
 if [ "$NETWORK_READY" -eq 1 ]; then
     run_renderer
     RET=$?
-
-    # 即使 DNS 已回來，首次 HTTPS 連線仍可能因剛喚醒而失敗；只重試一次。
     if [ "$RET" -ne 0 ]; then
-        echo "首次天氣更新失敗，等待 ${NETWORK_RECOVERY_DELAY} 秒讓網路穩定後重試一次" >> "$LOG"
-        sleep "$NETWORK_RECOVERY_DELAY"
-        restart_wifi
-        if wait_for_network; then
-            run_renderer
-            RET=$?
-        else
-            RET=75
-            echo "WiFi／DNS 在第二次等待後仍未就緒，略過天氣更新以節省電力" >> "$LOG"
-        fi
+        echo "天氣更新失敗，安全結束本輪並交由 Online Screensaver 延後重試" >> "$LOG"
     fi
 else
     RET=75
-    echo "WiFi／DNS 未就緒，略過天氣更新以節省電力" >> "$LOG"
+    echo "WiFi／DNS 未就緒，安全結束本輪並交由 Online Screensaver 延後重試" >> "$LOG"
 fi
 
 if [ $RET -eq 124 ]; then
@@ -183,10 +159,12 @@ else
     fi
 fi
 
-cleanup_power
 echo "--- 更新結束 $(date) ---" >> "$LOG"
 if [ "$KEEP_DISPLAY" -eq 1 ]; then
     echo "單次更新完成，保持 weather.png 顯示" >> "$LOG"
 else
     echo "手動單次更新未成功，允許 Kindle 休眠" >> "$LOG"
 fi
+
+# 將網路／渲染失敗交給上層排程辨識，才能在 15 分鐘後建立新的更新程序重試。
+exit "$RET"
