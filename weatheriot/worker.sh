@@ -5,12 +5,13 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-15"
+VERSION="worker-once-2026-10-15.1"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
 RENDER_TIMEOUT=90
+FORCED_DNS_SERVERS="223.5.5.5 119.29.29.29"
 
 if [ "$1" = "--scheduled" ]; then
     SCHEDULED=1
@@ -27,6 +28,31 @@ enable_wifi() {
 disable_wifi() {
     lipc-set-prop -i com.lab126.wifid enable 0 >> "$LOG" 2>&1
     lipc-set-prop -i com.lab126.cmd wirelessEnable 0 >> "$LOG" 2>&1
+}
+
+apply_forced_dns() {
+    # wifid/DHCP 在每次喚醒後可能寫入不穩定的 DNS。將已驗證可連線的
+    # 阿里與騰訊 DNS 寫入系統 resolver；每次更新都重設，避免被 DHCP 覆蓋。
+    if ! mntroot rw >> "$LOG" 2>&1; then
+        echo "ERROR: 無法將系統分割區切換為可寫，未套用指定 DNS" >> "$LOG"
+        return 1
+    fi
+
+    {
+        for DNS_SERVER in $FORCED_DNS_SERVERS; do
+            echo "nameserver $DNS_SERVER"
+        done
+        echo "options timeout:2 attempts:2"
+    } > /etc/resolv.conf
+    DNS_RET=$?
+    mntroot ro >> "$LOG" 2>&1
+
+    if [ "$DNS_RET" -eq 0 ]; then
+        echo "已套用指定 DNS：$FORCED_DNS_SERVERS" >> "$LOG"
+    else
+        echo "ERROR: 指定 DNS 寫入失敗" >> "$LOG"
+    fi
+    return "$DNS_RET"
 }
 
 cleanup_power() {
@@ -54,6 +80,7 @@ image_info() {
 
 wait_for_network() {
     ATTEMPT=1
+    DNS_REAPPLIED=0
     while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
         # PW1 的 HTTPS 預檢會偶發逾時，即使 render.py 隨後可正常更新；
         # 只做有限時的 DNS 查詢，讓實際天氣請求決定連線是否可用。
@@ -62,6 +89,11 @@ wait_for_network() {
             return 0
         else
             echo "等待 WiFi 與 DNS 就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
+            if [ "$ATTEMPT" -eq 4 ] && [ "$DNS_REAPPLIED" -eq 0 ]; then
+                echo "DNS 持續未就緒，重新套用指定 DNS" >> "$LOG"
+                apply_forced_dns
+                DNS_REAPPLIED=1
+            fi
         fi
         sleep "$NETWORK_DELAY"
         ATTEMPT=$((ATTEMPT + 1))
@@ -104,6 +136,9 @@ fi
 
 echo "開啟 WiFi..." >> "$LOG"
 enable_wifi
+# 先讓 wifid 完成 AP 關聯與 DHCP，之後再覆寫 resolver，避免 DHCP 立即蓋回 DNS。
+sleep 10
+apply_forced_dns
 
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
