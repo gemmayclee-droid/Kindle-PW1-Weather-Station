@@ -55,11 +55,6 @@ LOCAL_WEATHER_TIMEOUT=180
 LOCAL_WEATHER_RETRY_COUNT=2
 LOCAL_WEATHER_RETRY_DELAY=900
 
-# Kindle 從 Screen Saver／RTC 鬧鐘喚醒時，wifid 雖可立刻接受啟用指令，
-# 但 AP 關聯與 DHCP 仍可能尚未完成。排程更新前先預熱網路，可避免後續
-# weatheriot 在 DNS 查詢階段過早失敗；手動 Update Once 不使用這段等待。
-SCHEDULED_WIFI_WARMUP_SECONDS=60
-
 # folder that holds the screensavers
 SCREENSAVERFOLDER=/mnt/us/linkss/screensavers/
 

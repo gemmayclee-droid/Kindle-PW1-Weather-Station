@@ -15,7 +15,6 @@ else
 	WEEKDAY_UPDATE_TIMES="08:00 11:00 14:00 17:00 20:00"
 	LOCAL_WEATHER_RETRY_COUNT=2
 	LOCAL_WEATHER_RETRY_DELAY=900
-	SCHEDULED_WIFI_WARMUP_SECONDS=60
 	RTC=0
 fi
 
@@ -70,20 +69,11 @@ seconds_to_next_update () {
 
 logger "工作日更新時刻：$WEEKDAY_UPDATE_TIMES（週六、週日不更新）"
 
-# 排程由 RTC 從 Screen Saver 喚醒時，Wi-Fi 重新關聯與 DHCP 常比 shell
-# 行程晚完成。先阻止再次休眠、啟用兩個 Wi-Fi 服務並等待一小段時間，讓
-# weatheriot 開始 DNS 查詢時已有可用的網路；完成更新仍由 worker 關閉 Wi-Fi。
+# 排程由 RTC 從 Screen Saver 喚醒時，先保持裝置清醒。Wi-Fi 的啟用、關聯
+# 狀態確認與必要的重連由 weatheriot worker 負責，避免固定等待時間誤判已連線。
 prepare_scheduled_network () {
-	WARMUP_SECONDS=${SCHEDULED_WIFI_WARMUP_SECONDS:-60}
-	case "$WARMUP_SECONDS" in
-		''|*[!0-9]*) WARMUP_SECONDS=60 ;;
-	esac
-
 	lipc-set-prop com.lab126.powerd preventScreenSaver 1 >/dev/null 2>&1
-	lipc-set-prop -i com.lab126.cmd wirelessEnable 1 >/dev/null 2>&1
-	lipc-set-prop -i com.lab126.wifid enable 1 >/dev/null 2>&1
-	log_required "排程喚醒後預熱 Wi-Fi ${WARMUP_SECONDS} 秒，等待 AP 關聯與 DHCP 完成"
-	sleep "$WARMUP_SECONDS"
+	log_required "排程已喚醒並保持裝置清醒，接著由 weatheriot 確認 Wi-Fi 實際連線狀態"
 }
 
 # 先等到下一個合法時刻，避免服務重啟時在非更新時段立刻更新。

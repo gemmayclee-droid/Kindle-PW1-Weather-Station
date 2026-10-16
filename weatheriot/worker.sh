@@ -5,11 +5,13 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-16.2"
+VERSION="worker-once-2026-10-16.3"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
+WIFI_STATE_ATTEMPTS=10
+WIFI_STATE_DELAY=3
 RENDER_TIMEOUT=90
 FORCED_DNS_SERVERS="223.5.5.5 119.29.29.29"
 
@@ -76,6 +78,54 @@ image_info() {
     else
         echo "weather.png status: missing" >> "$LOG"
     fi
+}
+
+wifi_state() {
+    lipc-get-prop com.lab126.wifid cmState 2>/dev/null | tr -d '\r"'
+}
+
+wait_for_wifi_connection() {
+    MAX_ATTEMPTS=$1
+    ATTEMPT=1
+    while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
+        WIFI_STATE=$(wifi_state)
+        if [ "$WIFI_STATE" = "CONNECTED" ]; then
+            echo "WiFi 已連線（wifid cmState=CONNECTED，第 $ATTEMPT/$MAX_ATTEMPTS 次檢查）" >> "$LOG"
+            return 0
+        fi
+        echo "等待 WiFi 實際連線（wifid cmState=${WIFI_STATE:-未知}，第 $ATTEMPT/$MAX_ATTEMPTS 次檢查）" >> "$LOG"
+        sleep "$WIFI_STATE_DELAY"
+        ATTEMPT=$((ATTEMPT + 1))
+    done
+    return 1
+}
+
+ensure_wifi_connection() {
+    echo "啟用 WiFi，等待 Kindle 網路管理器確認連線..." >> "$LOG"
+    enable_wifi
+    if wait_for_wifi_connection "$WIFI_STATE_ATTEMPTS"; then
+        return 0
+    fi
+
+    echo "WiFi 尚未連線，重置 wifid 與無線電後重新關聯" >> "$LOG"
+    disable_wifi
+    sleep 2
+    enable_wifi
+    if wait_for_wifi_connection 15; then
+        return 0
+    fi
+
+    if command -v wpa_cli >/dev/null 2>&1; then
+        echo "wifid 重啟後仍未連線，要求 wlan0 重新關聯" >> "$LOG"
+        wpa_cli -i wlan0 reassociate >> "$LOG" 2>&1
+        if wait_for_wifi_connection 10; then
+            return 0
+        fi
+    fi
+
+    WIFI_STATE=$(wifi_state)
+    echo "ERROR: WiFi 無法建立連線（最後 wifid cmState=${WIFI_STATE:-未知}）" >> "$LOG"
+    return 1
 }
 
 wait_for_network() {
@@ -158,11 +208,13 @@ if [ -e /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]; then
     echo powersave > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>> "$LOG"
 fi
 
-echo "開啟 WiFi..." >> "$LOG"
-enable_wifi
-# 先讓 wifid 完成 AP 關聯與 DHCP，之後再覆寫 resolver，避免 DHCP 立即蓋回 DNS。
-sleep 10
-apply_forced_dns
+ensure_wifi_connection
+WIFI_RET=$?
+if [ "$WIFI_RET" -eq 0 ]; then
+    # 先等 wifid 回報實際連線，再覆寫 resolver，避免 DHCP 立即蓋回 DNS。
+    sleep 3
+    apply_forced_dns
+fi
 
 CITY=$(grep "<city>" config.xml | sed 's/.*<city>\(.*\)<\/city>.*/\1/' | tr -d '\r' | tr -d ' ')
 LAT=$(grep "<lat>" config.xml | sed 's/.*<lat>\(.*\)<\/lat>.*/\1/' | tr -d '\r' | tr -d ' ')
@@ -178,7 +230,7 @@ echo "座標: $LAT,$LON" >> "$LOG"
 echo "語言: $LANGUAGE" >> "$LOG"
 
 NETWORK_READY=0
-if wait_for_network; then
+if [ "$WIFI_RET" -eq 0 ] && wait_for_network; then
     NETWORK_READY=1
 fi
 
