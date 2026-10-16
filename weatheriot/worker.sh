@@ -5,7 +5,7 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-15.1"
+VERSION="worker-once-2026-10-16.1"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
@@ -80,7 +80,6 @@ image_info() {
 
 wait_for_network() {
     ATTEMPT=1
-    DNS_REAPPLIED=0
     while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
         # PW1 的 HTTPS 預檢會偶發逾時，即使 render.py 隨後可正常更新；
         # 只做有限時的 DNS 查詢，讓實際天氣請求決定連線是否可用。
@@ -89,10 +88,11 @@ wait_for_network() {
             return 0
         else
             echo "等待 WiFi 與 DNS 就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
-            if [ "$ATTEMPT" -eq 4 ] && [ "$DNS_REAPPLIED" -eq 0 ]; then
-                echo "DNS 持續未就緒，重新套用指定 DNS" >> "$LOG"
-                apply_forced_dns
-                DNS_REAPPLIED=1
+            if [ "$ATTEMPT" -eq 4 ]; then
+                # 指定 DNS 已在本輪啟動時套用。PW1 在排程／休眠情境中重複
+                # mntroot rw/ro 會偶發卡住，造成整個 scheduler 停止；因此
+                # 不在這裡再次切換 rootfs，交由有限次檢查後的排程補救重試。
+                echo "DNS 仍未就緒；避免重複切換系統分割區，本輪將交由排程補救重試" >> "$LOG"
             fi
         fi
         sleep "$NETWORK_DELAY"
