@@ -5,7 +5,7 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-16.1"
+VERSION="worker-once-2026-10-16.2"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
@@ -81,9 +81,33 @@ image_info() {
 wait_for_network() {
     ATTEMPT=1
     while [ "$ATTEMPT" -le "$NETWORK_ATTEMPTS" ]; do
-        # PW1 的 HTTPS 預檢會偶發逾時，即使 render.py 隨後可正常更新；
-        # 只做有限時的 DNS 查詢，讓實際天氣請求決定連線是否可用。
-        if timeout -t 5 /usr/bin/python3 -c 'import socket; socket.gethostbyname("api.open-meteo.com")' >/dev/null 2>&1; then
+        # 不使用 libc gethostbyname：PW1 從 RTC 喚醒後偶爾會卡在系統 resolver，
+        # 連外層 timeout 也無法及時讓 scheduler 繼續。直接向指定 DNS 發 UDP 查詢，
+        # 並由 socket timeout 確保每次檢查都有明確上限。
+        if /usr/bin/python3 -c '
+import random, socket, struct, sys
+name = "api.open-meteo.com"
+query_id = random.randrange(65536)
+encoded = b"".join(bytes([len(label)]) + label.encode("ascii") for label in name.split(".")) + b"\0"
+packet = struct.pack("!HHHHHH", query_id, 0x0100, 1, 0, 0, 0) + encoded + struct.pack("!HH", 1, 1)
+for server in sys.argv[1:]:
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(2)
+        sock.sendto(packet, (server, 53))
+        response, _ = sock.recvfrom(512)
+        sock.close()
+        if len(response) >= 12:
+            response_id, flags, questions, answers = struct.unpack("!HHHH", response[:8])
+            if response_id == query_id and flags & 0x8000 and flags & 0x000F == 0 and answers > 0:
+                sys.exit(0)
+    except Exception:
+        try:
+            sock.close()
+        except Exception:
+            pass
+sys.exit(1)
+' $FORCED_DNS_SERVERS >/dev/null 2>&1; then
             echo "WiFi 與 DNS 已就緒（第 $ATTEMPT/$NETWORK_ATTEMPTS 次檢查）" >> "$LOG"
             return 0
         else
