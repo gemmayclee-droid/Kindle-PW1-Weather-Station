@@ -89,8 +89,9 @@ while [ 1 -eq 1 ]; do
 	UPDATE_RET=1
 	while [ "$UPDATE_ATTEMPT" -le "$LOCAL_WEATHER_RETRY_COUNT" ]; do
 		prepare_scheduled_network
-		/bin/sh ./update.sh
+		/bin/sh ./update.sh --scheduled
 		UPDATE_RET=$?
+		log_required "排程已收到更新結果（狀態碼 $UPDATE_RET）"
 		if [ "$UPDATE_RET" -eq 0 ]; then
 			break
 		fi

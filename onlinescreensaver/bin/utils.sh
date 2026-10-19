@@ -73,8 +73,11 @@ currentTime () {
 # arguments: $1 - amount of seconds to wake up in
 set_rtc_wakeup()
 {
-	lipc-set-prop -i com.lab126.powerd rtcWakeup $1 2>&1
-	logger "已設定 rtcWakeup，喚醒倒數：$1 秒"
+	if lipc-set-prop -i com.lab126.powerd rtcWakeup "$1" 2>&1; then
+		log_required "已設定 rtcWakeup，喚醒倒數：$1 秒"
+	else
+		log_required "ERROR: rtcWakeup 設定失敗，喚醒倒數：$1 秒"
+	fi
 }
 
 ##############################################################################
@@ -85,6 +88,18 @@ wait_for () {
 	ENDWAIT=$(( $(currentTime) + $1 ))
 	REMAININGWAITTIME=$(( $ENDWAIT - $(currentTime) ))
 	logger "開始等待下一次更新：$1 秒"
+	if [ "$REMAININGWAITTIME" -le 0 ]; then
+		return
+	fi
+	log_required "進入電源事件等待，距離下次執行約 $REMAININGWAITTIME 秒"
+
+	# 由背景助手延後釋放保護，讓主程序先進入 lipc-wait-event。不能由
+	# 主程序同步解除：powerd 可能立刻休眠，使其來不及接收 readyToSuspend。
+	(
+		sleep 1
+		lipc-set-prop com.lab126.powerd preventScreenSaver 0
+	) &
+	RELEASE_POWER_PID=$!
 
 	# PW1 的 RTC 對多日鬧鐘不可靠。最長拆成六小時一段，週末也會定期
 	# 重新設定下一段 RTC；裝置中途醒來時繼續等待，不能提早執行 update.sh。
@@ -99,7 +114,12 @@ wait_for () {
 
 		case "$EVENT" in
 			readyToSuspend*)
-				set_rtc_wakeup $CHUNKWAIT
+				# 事件可能在等待數小時後才出現，必須使用現在的剩餘時間。
+				ALARM_WAIT=$REMAININGWAITTIME
+				[ "$ALARM_WAIT" -gt 21600 ] && ALARM_WAIT=21600
+				if [ "$ALARM_WAIT" -gt 0 ]; then
+					set_rtc_wakeup "$ALARM_WAIT"
+				fi
 			;;
 			wakeupFromSuspend*|resuming*)
 				logger "裝置已喚醒，仍等待下一個排程時刻"
@@ -109,6 +129,8 @@ wait_for () {
 			;;
 		esac
 	done
+	wait "$RELEASE_POWER_PID"
+	lipc-set-prop com.lab126.powerd preventScreenSaver 1
 
 	logger "等待結束"
 }

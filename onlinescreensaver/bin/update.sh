@@ -26,6 +26,18 @@ fi
 
 setup_debug_log
 
+# 排程呼叫者必須收到結果、進入 RTC 等待後才可休眠。手動入口則在所有
+# 圖片安裝與日誌處理完成後釋放保護；EXIT trap 保留原始更新狀態碼。
+SCHEDULER_OWNS_POWER=0
+[ "${1:-}" = "--scheduled" ] && SCHEDULER_OWNS_POWER=1
+finish_update () {
+	log_required "本次更新已完成收尾（狀態碼 $UPDATE_EXIT_STATUS）"
+	if [ "$SCHEDULER_OWNS_POWER" -eq 0 ]; then
+		lipc-set-prop com.lab126.powerd preventScreenSaver 0
+	fi
+}
+trap 'UPDATE_EXIT_STATUS=$?; finish_update; exit "$UPDATE_EXIT_STATUS"' 0
+
 # KUAL 可能快取新增的選單動作；若存在一次性診斷旗標，改由已知可執行的
 # Update now 入口先收集 Linkss 系統狀態。成功後自動清除旗標。
 LINKSS_DIAGNOSTIC_REQUEST=/mnt/us/extensions/onlinescreensaver/linkss-diagnostic.request
@@ -88,6 +100,9 @@ if [ -f "$WEATHERIOT_PID_FILE" ]; then
 	fi
 fi
 
+# 舊 weatheriot 排程的停用腳本也會解除休眠保護，因此必須在其後重新取得。
+lipc-set-prop com.lab126.powerd preventScreenSaver 1
+
 # Local weatheriot mode: render weather.png on the Kindle, then use it as
 # the linkss screensaver image. This avoids requiring an HTTP image server.
 trace "update.sh:29" "選擇更新模式；IMAGE_URI=${IMAGE_URI:-<空白>}"
@@ -99,21 +114,12 @@ if [ -z "$IMAGE_URI" ]; then
 		logger "IMAGE_URI 為空白，改用本機 weatheriot 產生圖片"
 		# weatheriot 的 DNS／網路操作可能因系統休眠而卡住。外層必須有限時，
 		# 否則 scheduler.sh 會永遠等待這個子程序，後續工作日排程全部失效。
-		timeout -t "$LOCAL_WEATHER_TIMEOUT" /bin/sh "$LOCAL_WEATHER_SCRIPT"
+		WEATHERIOT_POWER_MANAGED=1 timeout -t "$LOCAL_WEATHER_TIMEOUT" /bin/sh "$LOCAL_WEATHER_SCRIPT"
 		LOCAL_RET=$?
 		if [ "$LOCAL_RET" -eq 124 ] || [ "$LOCAL_RET" -eq 137 ] || [ "$LOCAL_RET" -eq 143 ]; then
 			log_required "weatheriot 執行逾時（${LOCAL_WEATHER_TIMEOUT} 秒），已中止本次更新以保留後續排程"
 			killall python3 >/dev/null 2>&1
 			lipc-set-prop com.lab126.cmd wirelessEnable 0 >/dev/null 2>&1
-		fi
-		# worker.sh 為獨立 weatheriot 排程而保留 preventScreenSaver；Online
-		# Screensaver 已可使用 RTC 喚醒，因此此處必須恢復休眠能力。
-		lipc-set-prop com.lab126.powerd preventScreenSaver 0
-		POWER_RET=$?
-		if [ "$POWER_RET" -ne 0 ]; then
-			log_required "無法恢復 Kindle 休眠（preventScreenSaver=0，狀態碼 $POWER_RET）"
-		else
-			logger "已恢復 Kindle 休眠（preventScreenSaver=0）"
 		fi
 		trace "update.sh:36" "weatheriot worker 結束狀態碼=$LOCAL_RET"
 		if [ "$LOCAL_RET" -eq 0 ] && [ -s "$LOCAL_WEATHER_IMAGE" ]; then

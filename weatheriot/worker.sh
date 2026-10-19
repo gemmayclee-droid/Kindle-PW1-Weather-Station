@@ -5,7 +5,7 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-16.3"
+VERSION="worker-once-2026-10-19.1"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
@@ -60,7 +60,9 @@ apply_forced_dns() {
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
     disable_wifi
-    if [ "$KEEP_DISPLAY" -eq 1 ]; then
+    if [ "${WEATHERIOT_POWER_MANAGED:-0}" = "1" ]; then
+        echo "休眠由 Online Screensaver 接管，保持清醒以回傳更新結果" >> "$LOG"
+    elif [ "$KEEP_DISPLAY" -eq 1 ]; then
         echo "保持螢幕保護關閉，避免 weather.png 被覆蓋" >> "$LOG"
         lipc-set-prop com.lab126.powerd preventScreenSaver 1 >> "$LOG" 2>&1
     else
