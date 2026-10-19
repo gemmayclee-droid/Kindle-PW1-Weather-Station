@@ -108,7 +108,8 @@ def fetch_weather():
     last_status = None
     last_body = ""
 
-    for _ in range(2):
+    for attempt in range(2):
+        print("抓取天氣資料（第 {} 次）".format(attempt + 1), flush=True)
         try:
             r = session.get(OPEN_METEO_URL, timeout=12, verify=False)
             last_status = r.status_code
@@ -250,7 +251,9 @@ def build_daily_rows(weather):
 
 
 try:
+    print("render.py 已啟動，開始取得天氣", flush=True)
     weather = fetch_weather()
+    print("天氣資料已取得，開始繪圖", flush=True)
     if not weather or "hourly" not in weather:
         raise Exception(LABEL["fetch_error"])
 
@@ -321,6 +324,7 @@ try:
     )
 
     save_optimized(img)
+    print("天氣圖片已完成並寫入 weather.png", flush=True)
     sys.exit(0)
 
 except Exception:

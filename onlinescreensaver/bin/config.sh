@@ -49,7 +49,8 @@ IMAGE_URI=""
 LOCAL_WEATHER_SCRIPT=/mnt/us/extensions/weatheriot/worker.sh
 LOCAL_WEATHER_IMAGE=/mnt/us/extensions/weatheriot/weather.png
 # 本機天氣工作程序的最長執行時間。避免 DNS 或 Wi-Fi 卡住時連帶停止整個排程。
-LOCAL_WEATHER_TIMEOUT=180
+# 包含 Wi-Fi 重連、DNS 等待及最長 180 秒的繪圖時間。
+LOCAL_WEATHER_TIMEOUT=420
 # 天氣更新失敗時的排程層補救：每次間隔 15 分鐘，最多額外嘗試兩次。
 # 僅在失敗時啟用，正常情況仍維持每日五個正式更新時段。
 LOCAL_WEATHER_RETRY_COUNT=2

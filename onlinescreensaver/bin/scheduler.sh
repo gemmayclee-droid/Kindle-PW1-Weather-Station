@@ -72,7 +72,21 @@ logger "工作日更新時刻：$WEEKDAY_UPDATE_TIMES（週六、週日不更新
 # 排程由 RTC 從 Screen Saver 喚醒時，先保持裝置清醒。Wi-Fi 的啟用、關聯
 # 狀態確認與必要的重連由 weatheriot worker 負責，避免固定等待時間誤判已連線。
 prepare_scheduled_network () {
+	POWER_STATE=$(lipc-get-prop com.lab126.powerd state 2>/dev/null)
+	log_required "排程執行前 powerd state=${POWER_STATE:-未知}"
+	case "$POWER_STATE" in
+		screenSaver|readyToSuspend|suspended)
+			# RTC 只喚醒 CPU，仍可能停留在 Screen Saver 並讓 Wi-Fi 保持掛起。
+			# 使用與實體電源鍵相同的完整喚醒；等待時再恢復原本螢幕保護狀態。
+			if lipc-set-prop -i com.lab126.powerd powerButton 1; then
+				RESTORE_SCREEN_SAVER=1
+				sleep 2
+				log_required "已要求退出螢幕保護，完整喚醒 Kindle 網路服務"
+			fi
+		;;
+	esac
 	lipc-set-prop com.lab126.powerd preventScreenSaver 1 >/dev/null 2>&1
+	lipc-set-prop com.lab126.powerd flIntensity 0 >/dev/null 2>&1
 	log_required "排程已喚醒並保持裝置清醒，接著由 weatheriot 確認 Wi-Fi 實際連線狀態"
 }
 

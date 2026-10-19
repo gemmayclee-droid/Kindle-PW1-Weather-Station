@@ -5,14 +5,15 @@ cd "$BASE" || exit 1
 
 LOG="$BASE/log.txt"
 IMG="$BASE/weather.png"
-VERSION="worker-once-2026-10-19.1"
+VERSION="worker-once-2026-10-19.2"
 KEEP_DISPLAY=0
 SCHEDULED=0
 NETWORK_ATTEMPTS=8
 NETWORK_DELAY=3
 WIFI_STATE_ATTEMPTS=10
 WIFI_STATE_DELAY=3
-RENDER_TIMEOUT=90
+RENDER_TIMEOUT=180
+RUN_LOCK=/tmp/weatheriot-update.lock
 FORCED_DNS_SERVERS="223.5.5.5 119.29.29.29"
 
 if [ "$1" = "--scheduled" ]; then
@@ -60,6 +61,10 @@ apply_forced_dns() {
 cleanup_power() {
     echo "清理省電狀態..." >> "$LOG"
     disable_wifi
+    if [ "$(cat "$RUN_LOCK/pid" 2>/dev/null)" = "$$" ]; then
+        rm -f "$RUN_LOCK/pid"
+        rmdir "$RUN_LOCK" 2>/dev/null
+    fi
     if [ "${WEATHERIOT_POWER_MANAGED:-0}" = "1" ]; then
         echo "休眠由 Online Screensaver 接管，保持清醒以回傳更新結果" >> "$LOG"
     elif [ "$KEEP_DISPLAY" -eq 1 ]; then
@@ -69,6 +74,27 @@ cleanup_power() {
         echo "允許螢幕保護與休眠以節省電力" >> "$LOG"
         lipc-set-prop com.lab126.powerd preventScreenSaver 0 >> "$LOG" 2>&1
     fi
+}
+
+acquire_update_lock() {
+    if ! mkdir "$RUN_LOCK" 2>/dev/null; then
+        # 給剛取得鎖的程序時間寫入 PID，避免誤刪新鎖。
+        sleep 1
+        LOCK_PID=$(cat "$RUN_LOCK/pid" 2>/dev/null)
+        case "$LOCK_PID" in
+            ''|*[!0-9]*) ;;
+            *)
+                if kill -0 "$LOCK_PID" 2>/dev/null; then
+                    echo "另一個更新仍在執行（PID=$LOCK_PID），本次略過以免互相關閉 WiFi" >> "$LOG"
+                    return 75
+                fi
+            ;;
+        esac
+        rm -f "$RUN_LOCK/pid"
+        rmdir "$RUN_LOCK" 2>/dev/null
+        mkdir "$RUN_LOCK" 2>/dev/null || return 75
+    fi
+    echo "$$" > "$RUN_LOCK/pid"
 }
 
 image_info() {
@@ -189,7 +215,11 @@ run_renderer() {
     return "$RENDER_RET"
 }
 
-trap cleanup_power EXIT INT TERM
+# 必須先取得鎖才安裝清理：略過的程序不能關閉另一個更新的 Wi-Fi。
+acquire_update_lock || exit 75
+trap cleanup_power EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
 echo "===================================" >> "$LOG"
 echo " PW1 Weather Single Refresh " >> "$LOG"

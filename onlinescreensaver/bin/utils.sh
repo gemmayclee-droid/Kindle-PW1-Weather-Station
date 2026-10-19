@@ -97,9 +97,17 @@ wait_for () {
 	# 主程序同步解除：powerd 可能立刻休眠，使其來不及接收 readyToSuspend。
 	(
 		sleep 1
+		if [ "${RESTORE_SCREEN_SAVER:-0}" = "1" ]; then
+			RESTORE_STATE=$(lipc-get-prop com.lab126.powerd state 2>/dev/null)
+			if [ "$RESTORE_STATE" = "active" ]; then
+				lipc-set-prop -i com.lab126.powerd powerButton 1
+				log_required "更新收尾完成，已要求恢復螢幕保護狀態"
+			fi
+		fi
 		lipc-set-prop com.lab126.powerd preventScreenSaver 0
 	) &
 	RELEASE_POWER_PID=$!
+	RESTORE_SCREEN_SAVER=0
 
 	# PW1 的 RTC 對多日鬧鐘不可靠。最長拆成六小時一段，週末也會定期
 	# 重新設定下一段 RTC；裝置中途醒來時繼續等待，不能提早執行 update.sh。
