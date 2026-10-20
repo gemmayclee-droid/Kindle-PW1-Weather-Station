@@ -88,6 +88,8 @@ Weather Clock
 
    Online-Screensaver 的同名按鈕功能相同。只需在其中一個選單啟用一次；重新開啟 KUAL 後才會載入更新的選單。
 
+   選單會顯示排程啟用狀態：已啟用時隱藏 Enable，未啟用時隱藏 Disable（KUAL 不支援一般選單按鈕變灰）。點選狀態列可查看時段；啟用或停用後重新開啟 KUAL 以更新顯示。此狀態依開機服務設定判斷，不代表最近一次更新成功；若偵測到舊排程 PID，也會另行提示。
+
 ### 需求
 
 - 已越獄 Kindle Paperwhite 1
@@ -185,6 +187,8 @@ Weather Clock
 
    Online-Screensaver 的同名按钮功能相同。只需在其中一个菜单启用一次；重新打开 KUAL 后才会加载更新的菜单。
 
+   菜单会显示定时启用状态：已启用时隐藏 Enable，未启用时隐藏 Disable（KUAL 不支持普通菜单按钮变灰）。点击状态行可查看时段；启用或停用后重新打开 KUAL 以更新显示。此状态依据开机服务设置判断，不代表最近一次更新成功；若检测到旧定时 PID，也会另外提示。
+
 ### 需求
 
 - 已越狱 Kindle Paperwhite 1
@@ -281,6 +285,8 @@ Weather Clock
    - `Disable schedule` - stop automatic refreshes, including the legacy schedule
 
    The matching Online-Screensaver buttons perform the same actions. Enable the schedule from either menu once. Close and reopen KUAL to reload updated menu entries.
+
+   Both menus show scheduling status. Enable is hidden when enabled, and Disable is hidden when disabled; KUAL does not expose a greyed-out state for ordinary menu buttons. Tap the enabled-status row to see the update times. Reopen KUAL after enabling or disabling to refresh the display. Status reflects the boot-service configuration, not whether the last refresh succeeded; a legacy PID file is flagged separately.
 
 ### Requirements
 

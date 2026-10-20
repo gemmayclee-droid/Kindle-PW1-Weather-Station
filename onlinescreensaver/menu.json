@@ -2,10 +2,13 @@
 	"items": [
 		{"name": "Online-Screensaver",
 			"items" : [
+				{"name": "排程已啟用 / 定时已启用 / RTC enabled", "action": ":", "internal": "status 週一至週五 / 周一至周五 / Mon-Fri 08/11/14/17/20", "exitmenu":false, "status":false, "if": "\"/etc/upstart/onlinescreensaver.conf\" -f"},
+				{"name": "排程未啟用 / 定时未启用 / Disabled", "action": ":", "internal": "status 排程未啟用 / 定时未启用 / Schedule disabled", "exitmenu":false, "status":false, "if": "\"/etc/upstart/onlinescreensaver.conf\" -f ! \"/mnt/us/extensions/weatheriot/schedule.pid\" -f ! &&"},
+				{"name": "舊排程啟用 / 旧定时启用 / Legacy active", "action": ":", "internal": "status 請改用省電排程 / 请改用省电定时 / Enable RTC instead", "exitmenu":false, "status":false, "if": "\"/mnt/us/extensions/weatheriot/schedule.pid\" -f"},
 				{"name": "立即更新 / Update now",  "priority":0, "action": "bin/update.sh"},
 				{"name": "診斷 Linkss / 诊断 Linkss / Diagnose Linkss", "priority":0, "action": "bin/diagnose-linkss.sh"},
-				{"name": "啟用省電排程 / 启用省电定时 / Enable RTC", "priority":0, "action": "bin/enable.sh"},
-				{"name": "停用排程 / 停用定时 / Disable schedule", "priority":0, "action": "bin/disable.sh"}
+				{"name": "啟用省電排程 / 启用省电定时 / Enable RTC", "priority":0, "action": "bin/enable.sh", "if": "\"/etc/upstart/onlinescreensaver.conf\" -f !"},
+				{"name": "停用排程 / 停用定时 / Disable schedule", "priority":0, "action": "bin/disable.sh", "if": "\"/etc/upstart/onlinescreensaver.conf\" -f \"/mnt/us/extensions/weatheriot/schedule.pid\" -f ||"}
 			]
 		}
 	]

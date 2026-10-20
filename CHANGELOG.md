@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-10-19
 
+- 繁中：兩個 KUAL 選單新增排程狀態，並隱藏當前不適用的啟用／停用按鈕；另外提示舊排程 PID。
+- 简中：两个 KUAL 菜单新增定时状态，并隐藏当前不适用的启用／停用按钮；另外提示旧定时 PID。
+- English: Show schedule status in both KUAL menus, hide inapplicable enable/disable actions, and flag legacy schedule PID files.
+
 - 繁中：統一兩個 KUAL 選單的省電排程入口，移除舊四小時排程按鈕；啟用或停用時自動清理舊排程，並同步三語 README。
 - 简中：统一两个 KUAL 菜单的省电定时入口，移除旧四小时定时按钮；启用或停用时自动清理旧定时，并同步三语 README。
 - English: Unify both KUAL schedule controls, remove the legacy four-hour button, clean up legacy scheduling when enabling or disabling, and update all three README languages.
