@@ -24,8 +24,13 @@ setup_debug_log
 # forever and ever, try to update the screensaver
 logger "正在停用 Online Screensaver 自動更新"
 
+if [ -f /mnt/us/extensions/weatheriot/schedule.pid ]; then
+	/bin/sh /mnt/us/extensions/weatheriot/unschedule.sh
+fi
+
 stop onlinescreensaver || true      
 
 mntroot rw
-rm /etc/upstart/onlinescreensaver.conf
+rm -f /etc/upstart/onlinescreensaver.conf
 mntroot ro
+lipc-set-prop com.lab126.powerd preventScreenSaver 0

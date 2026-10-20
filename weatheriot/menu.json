@@ -5,20 +5,20 @@
     "priority": 0,
     "items": [
     {
-      "name": "Update Once",
+      "name": "立即更新 / Update Once",
       "action": "./start.sh",
       "exitmenu": true,
       "refresh": false
     },
     {
-      "name": "Install 4h Schedule",
-      "action": "./schedule.sh",
+      "name": "啟用省電排程 / 启用省电定时 / Enable RTC",
+      "action": "../onlinescreensaver/bin/enable.sh",
       "exitmenu": true,
       "refresh": false
     },
     {
-      "name": "Remove Schedule",
-      "action": "./unschedule.sh",
+      "name": "停用排程 / 停用定时 / Disable schedule",
+      "action": "../onlinescreensaver/bin/disable.sh",
       "exitmenu": true,
       "refresh": false
     }

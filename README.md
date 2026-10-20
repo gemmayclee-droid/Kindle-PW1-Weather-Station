@@ -32,8 +32,8 @@ Kindle Paperwhite 1 天氣站擴充套件。它會把上海天氣、未來 8 小
 ```text
 Weather Clock
 ├─ Update Once
-├─ Install 4h Schedule
-└─ Remove Schedule
+├─ Enable RTC（啟用省電排程）
+└─ Disable schedule（停用排程）
 ```
 
 ### 功能
@@ -43,15 +43,15 @@ Weather Clock
 - 可在 `config.xml` 選擇中文或英文顯示
 - 使用 Open-Meteo 小時預報，不需要 API key
 - 只在更新時開啟 Wi-Fi，完成後自動關閉
-- 自動更新時保持 Kindle 喚醒，確保背景排程可在每個週期執行
+- 自動更新使用 Online Screensaver 的 RTC 喚醒，等待期間允許休眠
 - `worker.sh` 永遠只做單次更新，跑完就恢復省電狀態並退出
-- `schedule.sh` 在週一至週五的 08:00、12:00、16:00、20:00 自動更新
+- 週一至週五 08:00、11:00、14:00、17:00、20:00 自動更新，週末不更新
 
 ### 更新模式
 
 - `weatheriot` 模式：在 Kindle 本機執行 `weatheriot/worker.sh`，產生 `weather.png` 後顯示；不需要圖片伺服器。
 - Online Screensaver 模式：由 `onlinescreensaver/bin/config.sh` 的 `IMAGE_URI` 從 URL 下載 PNG，並交由 `linkss` 顯示。
-- 兩者可擇一使用；`IMAGE_URI=""` 時會自動使用本機 `weatheriot` 模式。
+- `IMAGE_URI=""` 時使用本機 `weatheriot` 產圖；自動排程統一由 Online Screensaver 管理，兩個 KUAL 選單的排程按鈕是同一套功能。
 
 ### 檔案
 
@@ -59,10 +59,11 @@ Weather Clock
 
 ### 安裝
 
-1. 將 `weatheriot/` 目錄內的檔案複製到 Kindle：
+1. 將 `weatheriot/` 與 `onlinescreensaver/` 分別複製到 Kindle 的 `/mnt/us/extensions/`，保留目錄名稱：
 
    ```text
    /mnt/us/extensions/weatheriot
+   /mnt/us/extensions/onlinescreensaver
    ```
 
 2. 修改 `weatheriot/config.xml`：
@@ -82,8 +83,10 @@ Weather Clock
 3. 在 KUAL 開啟 `Weather Clock`，選擇：
 
    - `Update Once` - 立即更新一次
-   - `Install 4h Schedule` - 安裝週一至週五 08:00、12:00、16:00、20:00 的定時更新
-   - `Remove Schedule` - 停止自動更新
+   - `Enable RTC`（啟用省電排程）- 啟用每日五次排程，並自動清除舊四小時排程
+   - `Disable schedule`（停用排程）- 停止自動更新，包含清除舊排程
+
+   Online-Screensaver 的同名按鈕功能相同。只需在其中一個選單啟用一次；重新開啟 KUAL 後才會載入更新的選單。
 
 ### 需求
 
@@ -98,9 +101,9 @@ Weather Clock
 - `weather.png` 是預覽用產生圖片；Kindle 實際執行時會覆蓋它。
 - 將 `weatheriot/` 目錄內的檔案下載到 Kindle 的 `/mnt/us/extensions/weatheriot`；`weather.png` 可選，只是首次顯示前的預覽圖。
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 與執行診斷檔案應留在本機，不提交到 GitHub。
-- `worker.sh` 不會常駐；每次更新後會關閉 Wi-Fi。自動排程運作時會保持 `preventScreenSaver` 開啟，因為 Kindle 進入系統休眠會凍結背景排程，無法自行喚醒來執行下一次更新。
-- `Install 4h Schedule` 會啟動背景 `schedule.sh run` 循環，並在下一個工作日時段更新；20:00 後會等到下一個工作日 08:00，週五晚間則等到週一 08:00。不需要 `crontab`。
-- 如果 Kindle 上還留有舊版 `scheduler.sh`，可以刪除；新版不需要它。
+- `worker.sh` 每次更新後關閉 Wi-Fi；Online Screensaver 會接管休眠與下一次 RTC 喚醒，啟用設定會隨開機載入。
+- 舊 `weatheriot/schedule.sh` 僅保留相容性，不再提供 KUAL 啟用入口；手動執行它仍會使用較耗電的常醒模式。
+- 請保留 `onlinescreensaver/bin/scheduler.sh`，它是目前使用的 RTC 排程程式。
 
 ---
 
@@ -126,8 +129,8 @@ Kindle Paperwhite 1 天气站扩展。它会把上海天气、未来 8 小时逐
 ```text
 Weather Clock
 ├─ Update Once
-├─ Install 4h Schedule
-└─ Remove Schedule
+├─ Enable RTC（启用省电定时）
+└─ Disable schedule（停用定时）
 ```
 
 ### 功能
@@ -137,15 +140,15 @@ Weather Clock
 - 可在 `config.xml` 选择中文或英文显示
 - 使用 Open-Meteo 小时预报，不需要 API key
 - 只在更新时开启 Wi-Fi，完成后自动关闭
-- 自动更新时保持 Kindle 唤醒，确保后台排程可在每个周期执行
+- 自动更新使用 Online Screensaver 的 RTC 唤醒，等待期间允许休眠
 - `worker.sh` 永远只做单次更新，跑完就恢复省电状态并退出
-- `schedule.sh` 在周一至周五的 08:00、12:00、16:00、20:00 自动更新
+- 周一至周五 08:00、11:00、14:00、17:00、20:00 自动更新，周末不更新
 
 ### 更新模式
 
 - `weatheriot` 模式：在 Kindle 本机执行 `weatheriot/worker.sh`，生成 `weather.png` 后显示；不需要图片服务器。
 - Online Screensaver 模式：由 `onlinescreensaver/bin/config.sh` 的 `IMAGE_URI` 从 URL 下载 PNG，并交由 `linkss` 显示。
-- 两者可择一使用；`IMAGE_URI=""` 时会自动使用本机 `weatheriot` 模式。
+- `IMAGE_URI=""` 时使用本机 `weatheriot` 生成图片；自动定时统一由 Online Screensaver 管理，两个 KUAL 菜单的定时按钮是同一套功能。
 
 ### 文件
 
@@ -153,10 +156,11 @@ Weather Clock
 
 ### 安装
 
-1. 将 `weatheriot/` 目录内的文件复制到 Kindle：
+1. 将 `weatheriot/` 与 `onlinescreensaver/` 分别复制到 Kindle 的 `/mnt/us/extensions/`，保留目录名称：
 
    ```text
    /mnt/us/extensions/weatheriot
+   /mnt/us/extensions/onlinescreensaver
    ```
 
 2. 修改 `weatheriot/config.xml`：
@@ -176,8 +180,10 @@ Weather Clock
 3. 在 KUAL 打开 `Weather Clock`，选择：
 
    - `Update Once` - 立即更新一次
-   - `Install 4h Schedule` - 安装周一至周五 08:00、12:00、16:00、20:00 的定时更新
-   - `Remove Schedule` - 停止自动更新
+   - `Enable RTC`（启用省电定时）- 启用每日五次定时，并自动清除旧四小时定时
+   - `Disable schedule`（停用定时）- 停止自动更新，包括清除旧定时
+
+   Online-Screensaver 的同名按钮功能相同。只需在其中一个菜单启用一次；重新打开 KUAL 后才会加载更新的菜单。
 
 ### 需求
 
@@ -192,9 +198,9 @@ Weather Clock
 - `weather.png` 是预览用生成图片；Kindle 实际运行时会覆盖它。
 - 将 `weatheriot/` 目录内的文件下载到 Kindle 的 `/mnt/us/extensions/weatheriot`；`weather.png` 可选，只是首次显示前的预览图。
 - `weather.tmp.png`、`log.txt`、`schedule.pid` 与运行诊断文件应留在本机，不提交到 GitHub。
-- `worker.sh` 不会常驻；每次更新后会关 Wi-Fi。自动排程运行时会保持 `preventScreenSaver` 开启，因为 Kindle 进入系统休眠会冻结后台排程，无法自行唤醒来执行下一次更新。
-- `Install 4h Schedule` 会启动后台 `schedule.sh run` 循环，并在下一个工作日时段更新；20:00 后会等到下一个工作日 08:00，周五晚间则等到周一 08:00。不需要 `crontab`。
-- 如果 Kindle 上还留有旧版 `scheduler.sh`，可以删除；新版不需要它。
+- `worker.sh` 每次更新后关闭 Wi-Fi；Online Screensaver 会接管休眠与下一次 RTC 唤醒，启用设置会随开机加载。
+- 旧 `weatheriot/schedule.sh` 仅保留兼容性，不再提供 KUAL 启用入口；手动执行它仍会使用较耗电的常醒模式。
+- 请保留 `onlinescreensaver/bin/scheduler.sh`，它是目前使用的 RTC 定时程序。
 
 ---
 
@@ -220,8 +226,8 @@ Kindle Paperwhite 1 weather station extension. It renders Shanghai weather, the 
 ```text
 Weather Clock
 ├─ Update Once
-├─ Install 4h Schedule
-└─ Remove Schedule
+├─ Enable RTC (power-saving schedule)
+└─ Disable schedule
 ```
 
 ### Features
@@ -231,15 +237,15 @@ Weather Clock
 - Chinese or English display selected from `config.xml`
 - Open-Meteo hourly forecast, no API key required
 - Wi-Fi turns on only during refresh, then turns off again
-- Automatic updates keep Kindle awake so the background scheduler can run every cycle reliably
+- Automatic updates use Online Screensaver RTC wakeups and allow sleep between updates
 - `worker.sh` always runs a single refresh, restores Kindle power-saving state, then exits
-- `schedule.sh` refreshes automatically at 08:00, 12:00, 16:00, and 20:00, Monday through Friday
+- Automatic refreshes run at 08:00, 11:00, 14:00, 17:00, and 20:00, Monday through Friday; weekends are skipped
 
 ### Update modes
 
 - `weatheriot` mode: runs `weatheriot/worker.sh` on the Kindle, generates `weather.png`, and displays it locally; no image server is required.
 - Online Screensaver mode: downloads a PNG URL configured as `IMAGE_URI` in `onlinescreensaver/bin/config.sh`, then displays it through `linkss`.
-- Choose either mode; when `IMAGE_URI=""`, the local `weatheriot` mode is selected automatically.
+- When `IMAGE_URI=""`, local `weatheriot` rendering is selected. Online Screensaver manages all automatic scheduling; the schedule buttons in both KUAL menus control the same service.
 
 ### Files
 
@@ -247,10 +253,11 @@ Weather Clock
 
 ### Setup
 
-1. Copy the files inside `weatheriot/` to Kindle:
+1. Copy both `weatheriot/` and `onlinescreensaver/` into `/mnt/us/extensions/` on Kindle, preserving their directory names:
 
    ```text
    /mnt/us/extensions/weatheriot
+   /mnt/us/extensions/onlinescreensaver
    ```
 
 2. Edit `weatheriot/config.xml`:
@@ -270,8 +277,10 @@ Weather Clock
 3. From KUAL, open `Weather Clock` and choose:
 
    - `Update Once` - refresh immediately
-   - `Install 4h Schedule` - install weekday refreshes at 08:00, 12:00, 16:00, and 20:00
-   - `Remove Schedule` - stop automatic refreshes
+   - `Enable RTC` - enable five weekday refreshes and automatically remove the legacy four-hour schedule
+   - `Disable schedule` - stop automatic refreshes, including the legacy schedule
+
+   The matching Online-Screensaver buttons perform the same actions. Enable the schedule from either menu once. Close and reopen KUAL to reload updated menu entries.
 
 ### Requirements
 
@@ -286,6 +295,6 @@ Weather Clock
 - `weather.png` is included as a generated preview image. Runtime updates will overwrite it on Kindle.
 - Download the files inside `weatheriot/` to `/mnt/us/extensions/weatheriot` on Kindle; `weather.png` is optional and only provides a preview before the first refresh.
 - `weather.tmp.png`, `log.txt`, `schedule.pid`, and runtime diagnostics should stay local.
-- `worker.sh` does not stay resident. After each refresh it turns Wi-Fi off. While automatic updates are active it keeps `preventScreenSaver` enabled, because Kindle system sleep freezes the background scheduler and it cannot wake itself for the next refresh.
-- `Install 4h Schedule` starts the background `schedule.sh run` loop and refreshes at the next weekday slot. After 20:00 it waits until 08:00 on the next weekday; Friday evening waits until Monday 08:00. `crontab` is not required.
-- If an older `scheduler.sh` still exists on Kindle, remove it. This release does not need it.
+- `worker.sh` turns Wi-Fi off after each update. Online Screensaver manages sleep and the next RTC wakeup; enabling the service also enables startup at boot.
+- Legacy `weatheriot/schedule.sh` remains for compatibility but is no longer exposed in KUAL. Running it manually still uses the more power-hungry always-awake mode.
+- Keep `onlinescreensaver/bin/scheduler.sh`; it is the current RTC scheduler.

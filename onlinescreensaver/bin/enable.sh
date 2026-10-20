@@ -23,12 +23,17 @@ setup_debug_log
 
 if [ -e /etc/upstart ]; then
 	logger "正在啟用 Online Screensaver 自動更新"
+	# 兩個 KUAL 選單共用同一入口；啟用 RTC 時先清除舊的常醒排程。
+	if [ -f /mnt/us/extensions/weatheriot/schedule.pid ]; then
+		/bin/sh /mnt/us/extensions/weatheriot/unschedule.sh || exit 1
+	fi
 
 	mntroot rw
 	cp onlinescreensaver.conf /etc/upstart/
 	mntroot ro
 
-	start onlinescreensaver
+	# 已啟用時重新載入最新腳本，重複按啟用不會建立第二套排程。
+	restart onlinescreensaver || start onlinescreensaver
 else
 	logger "找不到 Upstart 目錄，裝置韌體可能過舊"
 fi

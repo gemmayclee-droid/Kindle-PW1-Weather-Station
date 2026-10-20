@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-10-19
 
+- 繁中：統一兩個 KUAL 選單的省電排程入口，移除舊四小時排程按鈕；啟用或停用時自動清理舊排程，並同步三語 README。
+- 简中：统一两个 KUAL 菜单的省电定时入口，移除旧四小时定时按钮；启用或停用时自动清理旧定时，并同步三语 README。
+- English: Unify both KUAL schedule controls, remove the legacy four-hour button, clean up legacy scheduling when enabling or disabling, and update all three README languages.
+
 - 繁中：排程更新時從螢幕保護完整喚醒，完成後恢復休眠；繪圖上限調整為 180 秒，整輪上限 420 秒。手動與排程更新使用互斥鎖避免互相關閉 Wi-Fi，手動更新保留歷史日誌。
 - 简中：定时更新时从屏幕保护完整唤醒，完成后恢复休眠；绘图上限调整为 180 秒，整轮上限 420 秒。手动与定时更新使用互斥锁避免互相关闭 Wi-Fi，手动更新保留历史日志。
 - English: Fully wake from Screen Saver for scheduled updates and restore sleep afterward. Allow 180 seconds for rendering and 420 seconds per update. Serialize manual and scheduled workers to prevent Wi-Fi conflicts, and retain manual-update log history.
